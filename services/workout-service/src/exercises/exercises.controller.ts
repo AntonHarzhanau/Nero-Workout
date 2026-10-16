@@ -7,53 +7,43 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
-  Req,
-  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
-
-import type { Request } from 'express';
 
 import { CreateExerciseDto } from './dto/create-exercise.dto.js';
 import { UpdateExerciseDto } from './dto/update-exercise.dto.js';
 import { ExercisesService } from './exercises.service.js';
+import { AuthGuard } from '../auth/auth.guard.js';
+import { CurrentUser } from '../auth/current-user.decorator.js';
+import type { AuthUser } from '../auth/auth-user.js';
 
-type AuthenticatedRequest = Request & {
-  user?: {
-    id: string;
-    role: 'standard' | 'admin';
-  };
-};
+
 
 @Controller('exercises')
+@UseGuards(AuthGuard)
 export class ExercisesController {
   constructor(
     private readonly exercisesService: ExercisesService,
   ) {}
 
   @Get()
-  findAvailable(@Req() request: AuthenticatedRequest) {
-    const user = this.getUser(request);
-
+  findAvailable(@CurrentUser() user: AuthUser) {
     return this.exercisesService.findAvailable(user.id);
   }
 
   @Get(':id')
   findOne(
-    @Req() request: AuthenticatedRequest,
+    @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
   ) {
-    const user = this.getUser(request);
-
     return this.exercisesService.findOne(user.id, id);
   }
 
   @Post()
   create(
-    @Req() request: AuthenticatedRequest,
+    @CurrentUser() user: AuthUser,
     @Body() dto: CreateExerciseDto,
   ) {
-    const user = this.getUser(request);
-
     return this.exercisesService.create(
       user.id,
       dto,
@@ -63,12 +53,10 @@ export class ExercisesController {
 
   @Put(':id')
   update(
-    @Req() request: AuthenticatedRequest,
+    @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateExerciseDto,
   ) {
-    const user = this.getUser(request);
-
     return this.exercisesService.update(
       user.id,
       id,
@@ -79,19 +67,9 @@ export class ExercisesController {
 
   @Delete(':id')
   delete(
-    @Req() request: AuthenticatedRequest,
+    @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
   ) {
-    const user = this.getUser(request);
-
     return this.exercisesService.delete(user.id, id);
-  }
-
-  private getUser(request: AuthenticatedRequest) {
-    if (!request.user) {
-      throw new UnauthorizedException();
-    }
-
-    return request.user;
   }
 }
