@@ -8,5 +8,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
   imports: [TypeOrmModule.forFeature([MuscleGroup])],
   controllers: [MuscleGroupsController],
   providers: [MuscleGroupsService],
+  exports: [MuscleGroupsService],
 })
 export class MuscleGroupsModule {}

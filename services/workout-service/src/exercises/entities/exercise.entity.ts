@@ -7,9 +7,9 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   type Relation,
+  RelationId,
   UpdateDateColumn,
 } from 'typeorm';
-import { PlanExercise } from '../../plans/entities/plan-exercise.entity.js';
 import { MuscleGroup } from '../../muscle-groups/entities/muscle-group.entity.js';
 
 export enum ExerciseVisibility {
@@ -62,6 +62,6 @@ export class Exercise {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 
-  @OneToMany(() => PlanExercise, (planExercise) => planExercise.exercise)
-  planExercises: Relation<PlanExercise[]>;
+  @RelationId((exercise: Exercise) => exercise.muscleGroups)
+  muscleGroupIds: string[];
 }

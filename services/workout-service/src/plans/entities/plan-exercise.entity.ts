@@ -30,7 +30,7 @@ export class PlanExercise {
   @JoinColumn({ name: 'plan_id' })
   plan: Relation<Plan>;
 
-  @ManyToOne(() => Exercise, (exercise) => exercise.planExercises, {
+  @ManyToOne(() => Exercise, {
     nullable: false,
     onDelete: 'CASCADE',
   })
