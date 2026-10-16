@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -10,6 +11,7 @@ import {
 import { WorkoutExercise } from './workout-exercise.entity.js';
 
 @Entity({ schema: 'workouts', name: 'workouts' })
+@Index(['ownerId', 'workoutDate'])
 export class Workout {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -21,7 +23,7 @@ export class Workout {
   title: string;
 
   @Column({ name: 'workout_date', type: 'date' })
-  workoutDate: Date;
+  workoutDate: string;
 
   @Column({
     name: 'duration_minutes',
@@ -36,6 +38,7 @@ export class Workout {
   @OneToMany(
     () => WorkoutExercise,
     (workoutExercise) => workoutExercise.workout,
+    { cascade: ['insert', 'update'] },
   )
   exercises: Relation<WorkoutExercise[]>;
 

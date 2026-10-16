@@ -1,42 +1,47 @@
-import { DataSource } from "typeorm";
-import { Plan } from "../plans/entities/plan.entity.js";
-import { PlanExercise } from "../plans/entities/plan-exercise.entity.js";
-import { Exercise } from "../exercises/entities/exercise.entity.js";
-import { fileURLToPath } from "url";
-import { MuscleGroup } from "../muscle-groups/entities/muscle-group.entity.js";
-import { PlanSet } from "../plans/entities/plan-set.entity.js";
+import { DataSource } from 'typeorm';
+import { Plan } from '../plans/entities/plan.entity.js';
+import { PlanExercise } from '../plans/entities/plan-exercise.entity.js';
+import { Exercise } from '../exercises/entities/exercise.entity.js';
+import { fileURLToPath } from 'url';
+import { MuscleGroup } from '../muscle-groups/entities/muscle-group.entity.js';
+import { PlanSet } from '../plans/entities/plan-set.entity.js';
+import { Workout } from '../workouts/entities/workout.entity.js';
+import { WorkoutExercise } from '../workouts/entities/workout-exercise.entity.js';
+import { WorkoutSet } from '../workouts/entities/workout-set.entity.js';
 
 function requiredEnv(name: string): string {
-    const value = process.env[name];
+  const value = process.env[name];
 
-    if (!value) {
-        throw new Error(`Missing required environment variable: ${name}`);
-    }
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
 
-    return value;
+  return value;
 }
 
 export default new DataSource({
-    type: "postgres",
-    host: requiredEnv("DB_HOST"),
-    port: Number(requiredEnv("DB_PORT")),
-    username: requiredEnv("DB_USER"),
-    password: requiredEnv("DB_PASSWORD"),
-    database: requiredEnv("DB_NAME"),
-    schema: "workouts",
+  type: 'postgres',
+  host: requiredEnv('DB_HOST'),
+  port: Number(requiredEnv('DB_PORT')),
+  username: requiredEnv('DB_USER'),
+  password: requiredEnv('DB_PASSWORD'),
+  database: requiredEnv('DB_NAME'),
+  schema: 'workouts',
 
-    entities: [
-        Plan, 
-        PlanExercise, 
-        PlanSet,
-        Exercise, 
-        MuscleGroup,
-    ],
+  entities: [
+    Plan,
+    PlanExercise,
+    PlanSet,
+    Exercise,
+    MuscleGroup,
+    Workout,
+    WorkoutExercise,
+    WorkoutSet,
+  ],
 
-    migrations: [
-        fileURLToPath(new URL("./migrations/*.{ts,js}", import.meta.url))
-    ],
-    synchronize: false,
-    migrationsRun: false,
-    
-})
+  migrations: [
+    fileURLToPath(new URL('./migrations/*.{ts,js}', import.meta.url)),
+  ],
+  synchronize: false,
+  migrationsRun: false,
+});

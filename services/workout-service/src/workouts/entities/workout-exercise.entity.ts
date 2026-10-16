@@ -26,7 +26,7 @@ export class WorkoutExercise {
   @Column({ name: 'exercise_id', type: 'uuid' })
   exerciseId: string;
 
-  @Column({ type: 'smallint' })
+  @Column({ type: 'int' })
   position: number;
 
   @ManyToOne(() => Workout, (workout) => workout.exercises, {
@@ -43,6 +43,8 @@ export class WorkoutExercise {
   @JoinColumn({ name: 'exercise_id' })
   exercise: Relation<Exercise>;
 
-  @OneToMany(() => WorkoutSet, (set) => set.workoutExercise)
+  @OneToMany(() => WorkoutSet, (set) => set.workoutExercise, {
+    cascade: ['insert', 'update'],
+  })
   sets: Relation<WorkoutSet[]>;
 }

@@ -33,14 +33,10 @@ export class WorkoutSet {
   @Column({ type: 'smallint' })
   reps: number;
 
-  @ManyToOne(
-    () => WorkoutExercise,
-    (workoutExercise) => workoutExercise.sets,
-    {
-      nullable: false,
-      onDelete: 'CASCADE',
-    },
-  )
+  @ManyToOne(() => WorkoutExercise, (workoutExercise) => workoutExercise.sets, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'workout_exercise_id' })
   workoutExercise: Relation<WorkoutExercise>;
 }
