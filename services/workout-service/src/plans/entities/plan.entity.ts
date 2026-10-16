@@ -2,27 +2,32 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { PlanExercise } from './plan-exercise.entity.js';
 
 @Entity({ schema: 'workouts', name: 'plans' })
 export class Plan {
   @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  id: string;
 
   @Column({ name: 'owner_id', type: 'uuid' })
-  ownerId!: string;
+  ownerId: string;
 
   @Column({ type: 'varchar', length: 120 })
-  title!: string;
+  title: string;
 
   @Column({ type: 'text', nullable: true })
-  description!: string | null;
+  description: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt!: Date;
+  createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
-  updatedAt!: Date;
+  updatedAt: Date;
+
+  @OneToMany(() => PlanExercise, (planExercise) => planExercise.plan)
+  planExercises: PlanExercise[];
 }
