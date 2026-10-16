@@ -3,6 +3,7 @@ import { Plan } from "../plans/entities/plan.entity.js";
 import { PlanExercise } from "../plans/entities/plan-exercise.entity.js";
 import { Exercise } from "../exercises/entities/exercise.entity.js";
 import { fileURLToPath } from "url";
+import { MuscleGroup } from "../muscle-groups/entities/muscle-group.entity.js";
 
 function requiredEnv(name: string): string {
     const value = process.env[name];
@@ -23,10 +24,10 @@ export default new DataSource({
     database: requiredEnv("DB_NAME"),
     schema: "workouts",
 
-    entities: [Plan, PlanExercise, Exercise],
+    entities: [Plan, PlanExercise, Exercise, MuscleGroup],
 
     migrations: [
-        fileURLToPath(new URL("./migrations/*.{ts, js}", import.meta.url))
+        fileURLToPath(new URL("./migrations/*.{ts,js}", import.meta.url))
     ],
     synchronize: false,
     migrationsRun: false,
