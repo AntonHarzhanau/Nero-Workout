@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module.js';
 import { AppConfigModule } from './config/app-config.module.js';
 import { ExercisesModule } from './exercises/exercises.module.js';
 import { MuscleGroupsModule } from './muscle-groups/muscle-groups.module.js';
+import { WorkoutsModule } from './workouts/workouts.module.js';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { MuscleGroupsModule } from './muscle-groups/muscle-groups.module.js';
     PlansModule,
     ExercisesModule,
     MuscleGroupsModule,
+    WorkoutsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
