@@ -11,6 +11,6 @@ export function createTypeOrmOptions(config: ConfigService): TypeOrmModuleOption
         password: config.getOrThrow<string>('DB_PASSWORD'),
         schema: 'workouts',
         autoLoadEntities: true,
-        synchronize: config.get<string>('DB_SYNCHRONIZE', 'false') === 'true',
+        synchronize: false,
     }
 }
