@@ -53,5 +53,20 @@ services:
       retries: 10
       start_period: 10s
 
+  account-service:
+    build:
+      context: ./services/account-service
+      target: dev
+
+    environment:
+      DATABASE_URL: postgresql://account_app:${ACCOUNT_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}?serverVersion=17&charset=utf8
+
+    volumes:
+      - ./services/account-service:/app
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:
