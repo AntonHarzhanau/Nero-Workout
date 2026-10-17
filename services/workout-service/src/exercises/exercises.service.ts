@@ -1,96 +1,70 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
-
 import { MuscleGroupsService } from '../muscle-groups/muscle-groups.service.js';
-
 import { CreateExerciseDto } from './dto/create-exercise.dto.js';
+import { FindExerciseDto } from './dto/find-exercise.dto.js';
 import { UpdateExerciseDto } from './dto/update-exercise.dto.js';
-
+import { Exercise, ExerciseVisibility } from './entities/exercise.entity.js';
+import { toExerciseValues, toExerciseView } from './exercise.mapper.js';
 import {
-  Exercise,
-  ExerciseVisibility,
-} from './entities/exercise.entity.js';
+  assertCanManageExercise,
+  assertCanSetVisibility,
+} from './exercise.policy.js';
+import type { ExerciseView } from './exercise.types.js';
+import { ExercisesRepository } from './exercises.repository.js';
+import {
+  type PaginatedResult,
+  createPaginatedResult,
+} from '../common/pagination.js';
 
 @Injectable()
 export class ExercisesService {
   constructor(
-    @InjectRepository(Exercise)
-    private readonly exercises: Repository<Exercise>,
-
+    private readonly exercisesRepository: ExercisesRepository,
     private readonly muscleGroupsService: MuscleGroupsService,
   ) {}
 
-  async findAvailable(userId: string) {
-    const exercises = await this.exercises.find({
-      where: [
-        { ownerId: userId },
-        { visibility: ExerciseVisibility.PUBLIC },
-      ],
-      order: {
-        title: 'ASC',
-        id: 'ASC',
-      }
-    });
+  async findManyForUser(
+    userId: string,
+    query: FindExerciseDto,
+  ): Promise<PaginatedResult<ExerciseView>> {
+    const { items, total } = await this.exercisesRepository.findPageForUser(
+      userId,
+      query,
+    );
 
-    return this.toViews(exercises);
+    return createPaginatedResult(
+      items.map(toExerciseView),
+      total,
+      query.page,
+      query.limit,
+    );
   }
 
-  async findOne(userId: string, exerciseId: string) {
-    const exercise = await this.exercises.findOne({
-      where: [
-        {
-          id: exerciseId,
-          ownerId: userId,
-        },
-        {
-          id: exerciseId,
-          visibility: ExerciseVisibility.PUBLIC,
-        },
-      ],
-    });
+  async findOne(userId: string, exerciseId: string): Promise<ExerciseView> {
+    const exercise = await this.requireAvailableExercise(userId, exerciseId);
 
-    if (!exercise) {
-      throw new NotFoundException('Exercise not found or unavailable');
-    }
-
-    const views = await this.toViews([exercise]);
-
-    return views[0];
+    return toExerciseView(exercise);
   }
 
   async create(
     userId: string,
     dto: CreateExerciseDto,
     isAdmin = false,
-  ) {
+  ): Promise<ExerciseView> {
     const visibility = dto.visibility ?? ExerciseVisibility.PRIVATE;
 
-    this.checkVisibilityPermission(visibility, isAdmin);
+    assertCanSetVisibility(visibility, isAdmin);
 
-    const groups = await this.muscleGroupsService.getByIds(
-      dto.muscleGroups,
-    );
+    await this.muscleGroupsService.getByIds(dto.muscleGroups);
 
-    const exercise = this.exercises.create({
+    const saved = await this.exercisesRepository.save({
       ownerId: userId,
-      title: dto.title.trim(),
-      description: dto.description ?? null,
-      equipment: dto.equipment ?? null,
-      visibility,
-
-      muscleGroups: groups.map((group) => ({
-        id: group.id,
-      })),
+      ...toExerciseValues(dto, visibility),
     });
-
-    const saved = await this.exercises.save(exercise);
 
     return this.findOne(userId, saved.id);
   }
@@ -100,46 +74,34 @@ export class ExercisesService {
     exerciseId: string,
     dto: UpdateExerciseDto,
     isAdmin = false,
-  ) {
-    const exercise = await this.exercises.findOneBy({
-      id: exerciseId,
-    });
+  ): Promise<ExerciseView> {
+    const exercise = await this.requireExistingExercise(exerciseId);
 
-    if (!exercise) {
-      throw new NotFoundException('Exercise not found or unavailable');
-    }
-
-    if (exercise.ownerId !== userId) {
-      throw new ForbiddenException(
-        'You do not have permission to edit this exercise',
-      );
-    }
+    assertCanManageExercise(userId, exercise);
 
     const visibility = dto.visibility ?? exercise.visibility;
 
     if (visibility !== exercise.visibility) {
-      this.checkVisibilityPermission(visibility, isAdmin);
+      assertCanSetVisibility(visibility, isAdmin);
     }
 
-    const groups = await this.muscleGroupsService.getByIds(
-      dto.muscleGroups,
-    );
+    await this.muscleGroupsService.getByIds(dto.muscleGroups);
 
-    const updated = this.exercises.create({
+    await this.exercisesRepository.save({
       id: exercise.id,
       ownerId: exercise.ownerId,
-      title: dto.title.trim(),
-      description: dto.description ?? null,
-      equipment: dto.equipment ?? null,
-      visibility,
-      muscleGroups: groups.map((group) => ({
-        id: group.id,
-      })),
+      ...toExerciseValues(dto, visibility),
     });
 
-    await this.exercises.save(updated);
+    return this.findOne(userId, exercise.id);
+  }
 
-    return this.findOne(userId, exerciseId);
+  async delete(userId: string, exerciseId: string): Promise<void> {
+    const exercise = await this.requireAvailableExercise(userId, exerciseId);
+
+    assertCanManageExercise(userId, exercise);
+
+    await this.exercisesRepository.deleteById(exercise.id);
   }
 
   async assertAvailableToUser(
@@ -152,18 +114,10 @@ export class ExercisesService {
       return;
     }
 
-    const count = await this.exercises.count({
-      where: [
-        {
-          id: In(ids),
-          ownerId: userId,
-        },
-        {
-          id: In(ids),
-          visibility: ExerciseVisibility.PUBLIC,
-        },
-      ],
-    });
+    const count = await this.exercisesRepository.countAvailableByIds(
+      userId,
+      ids,
+    );
 
     if (count !== ids.length) {
       throw new BadRequestException(
@@ -175,25 +129,17 @@ export class ExercisesService {
   async getAvailableByIds(
     userId: string,
     exerciseIds: string[],
-  ) {
+  ): Promise<ExerciseView[]> {
     const ids = [...new Set(exerciseIds)];
 
     if (ids.length === 0) {
       return [];
     }
 
-    const exercises = await this.exercises.find({
-      where: [
-        {
-          id: In(ids),
-          ownerId: userId,
-        },
-        {
-          id: In(ids),
-          visibility: ExerciseVisibility.PUBLIC,
-        },
-      ],
-    });
+    const exercises = await this.exercisesRepository.findAvailableByIds(
+      userId,
+      ids,
+    );
 
     if (exercises.length !== ids.length) {
       throw new BadRequestException(
@@ -201,64 +147,32 @@ export class ExercisesService {
       );
     }
 
-    return this.toViews(exercises);
+    return exercises.map(toExerciseView);
   }
 
-  async delete(userId: string, exerciseId: string) {
-    const exercise = await this.findOne(userId, exerciseId);
+  private async requireExistingExercise(exerciseId: string): Promise<Exercise> {
+    const exercise = await this.exercisesRepository.findById(exerciseId);
 
     if (!exercise) {
       throw new NotFoundException('Exercise not found or unavailable');
     }
 
-    if (exercise.ownerId !== userId) {
-      throw new ForbiddenException(
-        'You do not have permission to delete this exercise',
-      );
-    }
-
-    await this.exercises.delete(exerciseId);
+    return exercise;
   }
 
-  private checkVisibilityPermission(
-    visibility: ExerciseVisibility,
-    isAdmin: boolean,
-  ): void {
-    if (visibility === ExerciseVisibility.PUBLIC && !isAdmin) {
-      throw new ForbiddenException(
-        'Public exercises can only be created by administrators',
-      );
+  private async requireAvailableExercise(
+    userId: string,
+    exerciseId: string,
+  ): Promise<Exercise> {
+    const exercise = await this.exercisesRepository.findAvailableById(
+      userId,
+      exerciseId,
+    );
+
+    if (!exercise) {
+      throw new NotFoundException('Exercise not found or unavailable');
     }
-  }
 
-  private async toViews(exercises: Exercise[]) {
-    const groupIds = [
-      ...new Set(
-        exercises.flatMap((exercise) => exercise.muscleGroupIds),
-      ),
-    ];
-
-    const groups = await this.muscleGroupsService.getByIds(
-      groupIds,
-    );
-
-    const groupById = new Map(
-      groups.map((group) => [group.id, group]),
-    );
-
-    return exercises.map((exercise) => ({
-      id: exercise.id,
-      ownerId: exercise.ownerId,
-      title: exercise.title,
-      description: exercise.description,
-      equipment: exercise.equipment,
-      visibility: exercise.visibility,
-      createdAt: exercise.createdAt,
-      updatedAt: exercise.updatedAt,
-
-      muscleGroups: exercise.muscleGroupIds.map(
-        (id) => groupById.get(id),
-      ),
-    }));
+    return exercise;
   }
 }
