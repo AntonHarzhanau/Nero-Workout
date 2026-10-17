@@ -63,10 +63,13 @@ services:
       JWT_SECRET_KEY: /run/secrets/jwt_private
       JWT_PUBLIC_KEY: /run/secrets/jwt_public
       JWT_PASSPHRASE: ""
+      INTERNAL_API_TOKEN_FILE: /run/secrets/internal_api_token
+      WORKOUT_SERVICE_URL: ""
 
     secrets:
       - jwt_private
       - jwt_public
+      - internal_api_token
 
     volumes:
       - ./services/account-service:/app
@@ -80,6 +83,8 @@ secrets:
     file: ./secrets/jwt_private.pem
   jwt_public:
     file: ./secrets/jwt_public.pem
+  internal_api_token:
+    file: ./secrets/internal_api_token
 
 volumes:
   postgres_data:

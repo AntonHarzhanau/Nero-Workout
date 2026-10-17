@@ -5,6 +5,7 @@ namespace App\EventListener;
 use App\Exception\AccountAlreadyExistsException;
 use App\Exception\InvalidCredentialsException;
 use App\Exception\InvalidRefreshTokenException;
+use App\Exception\UserDataCleanupFailedException;
 use App\Http\ApiErrorResponse;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -13,12 +14,7 @@ use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
 
-/**
- * Turns every exception into a JSON error response.
- *
- * Priority -64: after Symfony logs the exception (0) and after the security layer
- * converts access denials (1), but before the default HTML error renderer (-128).
- */
+
 #[AsEventListener(priority: -64)]
 final class ApiExceptionListener
 {
@@ -47,6 +43,11 @@ final class ApiExceptionListener
             $exception instanceof InvalidRefreshTokenException => new ApiErrorResponse(
                 Response::HTTP_UNAUTHORIZED,
                 'invalid_refresh_token',
+                $exception->getMessage(),
+            ),
+            $exception instanceof UserDataCleanupFailedException => new ApiErrorResponse(
+                Response::HTTP_BAD_GATEWAY,
+                'dependency_unavailable',
                 $exception->getMessage(),
             ),
             $exception instanceof HttpExceptionInterface => $this->fromHttpException($exception),
