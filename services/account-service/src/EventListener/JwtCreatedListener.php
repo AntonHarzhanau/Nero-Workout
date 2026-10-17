@@ -7,9 +7,7 @@ use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTCreatedEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Events;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
-/**
- * Shapes the JWT payload shared with the other services: sub (user UUID), role, iss, aud.
- */
+
 #[AsEventListener(event: Events::JWT_CREATED)]
 final class JwtCreatedListener
 {
