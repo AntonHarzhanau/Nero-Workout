@@ -3,7 +3,7 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 export function createTypeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
 
-    const isProduction = config.getOrThrow<string>('NODE_ENV') === 'prod';
+    const isProduction = config.getOrThrow<string>('NODE_ENV') === 'production';
     console.log('isProduction', isProduction);
     return {
         type: 'postgres',
