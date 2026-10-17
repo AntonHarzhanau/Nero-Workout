@@ -1,0 +1,10 @@
+vendor
+var
+tests
+bin/phpunit
+phpunit.dist.xml
+.phpunit.cache
+.git
+.env
+.env.*
+*.md

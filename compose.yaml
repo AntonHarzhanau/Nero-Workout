@@ -35,6 +35,8 @@ services:
 
       WORKOUT_DB_USER: ${WORKOUT_DB_USER:?WORKOUT_DB_USER is required}
       WORKOUT_DB_PASSWORD: ${WORKOUT_DB_PASSWORD:?WORKOUT_DB_PASSWORD is required}
+
+      STATISTICS_DB_USER: ${STATISTICS_DB_USER:?STATISTICS_DB_USER is required}
       STATISTICS_DB_PASSWORD: ${STATISTICS_DB_PASSWORD:?STATISTICS_DB_PASSWORD is required}
 
     ports:
@@ -52,6 +54,40 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+
+  account-service:
+    build:
+      context: ./services/account-service
+      target: runtime
+
+    environment:
+      DATABASE_URL: postgresql://${ACCOUNT_DB_USER}:${ACCOUNT_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}?serverVersion=17&charset=utf8
+      DEFAULT_URI: http://localhost:8081
+      JWT_SECRET_KEY: /run/secrets/jwt_private
+      JWT_PUBLIC_KEY: /run/secrets/jwt_public
+      JWT_PASSPHRASE: ""
+      INTERNAL_API_TOKEN_FILE: /run/secrets/internal_api_token
+      WORKOUT_SERVICE_URL: ""
+
+    secrets:
+      - jwt_private
+      - jwt_public
+      - internal_api_token
+
+    ports:
+      - "127.0.0.1:8081:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+secrets:
+  jwt_private:
+    file: ./secrets/jwt_private.pem
+  jwt_public:
+    file: ./secrets/jwt_public.pem
+  internal_api_token:
+    file: ./secrets/internal_api_token
 
 volumes:
   postgres_data:
