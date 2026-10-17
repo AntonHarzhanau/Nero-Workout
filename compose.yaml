@@ -34,6 +34,13 @@ services:
 
     environment:
       DATABASE_URL: postgresql://account_app:${ACCOUNT_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}?serverVersion=17&charset=utf8
+      JWT_SECRET_KEY: /run/secrets/jwt_private
+      JWT_PUBLIC_KEY: /run/secrets/jwt_public
+      JWT_PASSPHRASE: ""
+
+    secrets:
+      - jwt_private
+      - jwt_public
 
     volumes:
       - ./services/account-service:/app
@@ -41,6 +48,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+secrets:
+  jwt_private:
+    file: ./secrets/jwt_private.pem
+  jwt_public:
+    file: ./secrets/jwt_public.pem
 
 volumes:
   postgres_data:
