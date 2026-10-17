@@ -28,6 +28,7 @@ export class Plan {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 
-  @OneToMany(() => PlanExercise, (planExercise) => planExercise.plan)
+  @OneToMany(() => PlanExercise, (planExercise) => planExercise.plan
+, { cascade: ["insert", 'update'] })
   planExercises: PlanExercise[];
 }
