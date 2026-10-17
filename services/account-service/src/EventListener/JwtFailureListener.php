@@ -10,9 +10,7 @@ use Lexik\Bundle\JWTAuthenticationBundle\Events;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * Aligns the bundle's 401 responses with the API error format.
- */
+
 final class JwtFailureListener
 {
     #[AsEventListener(event: Events::JWT_NOT_FOUND)]

@@ -10,9 +10,6 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class HealthController extends AbstractController
 {
-    /**
-     * Used by the Docker healthcheck: the service is healthy only if the database answers.
-     */
     #[Route('/health', name: 'health', methods: ['GET'])]
     public function __invoke(Connection $connection): JsonResponse
     {
