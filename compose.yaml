@@ -58,10 +58,11 @@ services:
   account-service:
     build:
       context: ./services/account-service
-      target: dev
+      target: runtime
 
     environment:
       DATABASE_URL: postgresql://${ACCOUNT_DB_USER}:${ACCOUNT_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}?serverVersion=17&charset=utf8
+      DEFAULT_URI: http://localhost:8081
       JWT_SECRET_KEY: /run/secrets/jwt_private
       JWT_PUBLIC_KEY: /run/secrets/jwt_public
       JWT_PASSPHRASE: ""
@@ -73,8 +74,8 @@ services:
       - jwt_public
       - internal_api_token
 
-    volumes:
-      - ./services/account-service:/app
+    ports:
+      - "127.0.0.1:8081:8080"
 
     depends_on:
       postgres:
