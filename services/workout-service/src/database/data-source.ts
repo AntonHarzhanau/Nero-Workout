@@ -1,13 +1,6 @@
 import { DataSource } from 'typeorm';
-import { Plan } from '../plans/entities/plan.entity.js';
-import { PlanExercise } from '../plans/entities/plan-exercise.entity.js';
-import { Exercise } from '../exercises/entities/exercise.entity.js';
 import { fileURLToPath } from 'url';
-import { MuscleGroup } from '../muscle-groups/entities/muscle-group.entity.js';
-import { PlanSet } from '../plans/entities/plan-set.entity.js';
-import { Workout } from '../workouts/entities/workout.entity.js';
-import { WorkoutExercise } from '../workouts/entities/workout-exercise.entity.js';
-import { WorkoutSet } from '../workouts/entities/workout-set.entity.js';
+import { resolve } from 'path';
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -28,19 +21,10 @@ export default new DataSource({
   database: requiredEnv('DB_NAME'),
   schema: 'workouts',
 
-  entities: [
-    Plan,
-    PlanExercise,
-    PlanSet,
-    Exercise,
-    MuscleGroup,
-    Workout,
-    WorkoutExercise,
-    WorkoutSet,
-  ],
+  entities: [resolve(process.cwd(), 'src/**/*.entity.ts')],
 
   migrations: [
-    fileURLToPath(new URL('./migrations/*.{ts,js}', import.meta.url)),
+    fileURLToPath(new URL('./migrations/*.ts', import.meta.url)),
   ],
   synchronize: false,
   migrationsRun: false,
