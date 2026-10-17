@@ -1,0 +1,51 @@
+import type { ExerciseView } from '../exercises/exercise.types.js';
+
+export interface WorkoutSetValues {
+  position: number;
+  weightKg: string;
+  reps: number;
+}
+
+export interface WorkoutExerciseValues {
+  exerciseId: string;
+  sets: WorkoutSetValues[];
+}
+
+export interface PositionedWorkoutExerciseValues extends WorkoutExerciseValues {
+  position: number;
+}
+
+export interface WorkoutValues {
+  workoutDate: string;
+  durationMinutes: number | null;
+  title: string;
+  description: string | null;
+  exercises: PositionedWorkoutExerciseValues[];
+}
+
+export interface WorkoutSummary {
+  workoutDate: string;
+  durationMinutes: number | null;
+  id: string;
+  ownerId: string;
+  title: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface WorkoutSetView extends WorkoutSetValues {
+  id: string;
+}
+
+export interface WorkoutExerciseView {
+  id: string;
+  exerciseId: string;
+  position: number;
+  exercise: ExerciseView;
+  sets: WorkoutSetView[];
+}
+
+export interface WorkoutView extends WorkoutSummary {
+  exercises: WorkoutExerciseView[];
+}
