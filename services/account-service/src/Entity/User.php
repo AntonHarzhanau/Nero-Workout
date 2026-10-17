@@ -44,7 +44,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __construct(string $name, string $username, string $email)
     {
         $this->id = Uuid::v7();
-        $this->name = $name;
+        $this->name = trim($name);
         $this->username = mb_strtolower(trim($username));
         $this->email = mb_strtolower(trim($email));
         $this->createdAt = new \DateTimeImmutable();

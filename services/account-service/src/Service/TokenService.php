@@ -34,7 +34,7 @@ class TokenService
         $this->em->persist(new Session($user, self::hash($refreshToken), $expiresAt));
         $this->em->flush();
 
-        return new TokenPair($this->jwtManager->create($user), $refreshToken, $this->accessTokenTtl);
+        return new TokenPair($this->jwtManager->create($user), $refreshToken, $this->accessTokenTtl, $user);
     }
 
 
