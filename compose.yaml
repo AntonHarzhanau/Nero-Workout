@@ -1,4 +1,27 @@
 services:
+  workout-service:
+    build:
+      context: ./services/workout-service
+      target: runtime
+
+    environment:
+      NODE_ENV: production
+
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB:?POSTGRES_DB is required}
+      DB_USER: ${WORKOUT_DB_USER:?WORKOUT_DB_USER is required}
+      DB_PASSWORD: ${WORKOUT_DB_PASSWORD:?WORKOUT_DB_PASSWORD is required}
+
+    ports:
+      - "127.0.0.1:3001:3001"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    init: true
+
   postgres:
     image: postgres:17
 
@@ -7,8 +30,13 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
 
+      ACCOUNT_DB_USER: ${ACCOUNT_DB_USER:?ACCOUNT_DB_USER is required}
       ACCOUNT_DB_PASSWORD: ${ACCOUNT_DB_PASSWORD:?ACCOUNT_DB_PASSWORD is required}
+
+      WORKOUT_DB_USER: ${WORKOUT_DB_USER:?WORKOUT_DB_USER is required}
       WORKOUT_DB_PASSWORD: ${WORKOUT_DB_PASSWORD:?WORKOUT_DB_PASSWORD is required}
+
+      STATISTICS_DB_USER: ${STATISTICS_DB_USER:?STATISTICS_DB_USER is required}
       STATISTICS_DB_PASSWORD: ${STATISTICS_DB_PASSWORD:?STATISTICS_DB_PASSWORD is required}
 
     ports:
@@ -17,7 +45,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-      
+
     healthcheck:
       test:
         - CMD-SHELL
@@ -33,7 +61,7 @@ services:
       target: dev
 
     environment:
-      DATABASE_URL: postgresql://account_app:${ACCOUNT_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}?serverVersion=17&charset=utf8
+      DATABASE_URL: postgresql://${ACCOUNT_DB_USER}:${ACCOUNT_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}?serverVersion=17&charset=utf8
       JWT_SECRET_KEY: /run/secrets/jwt_private
       JWT_PUBLIC_KEY: /run/secrets/jwt_public
       JWT_PASSPHRASE: ""

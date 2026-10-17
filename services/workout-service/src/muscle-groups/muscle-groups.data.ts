@@ -1,0 +1,16 @@
+export const DEFAULT_MUSCLE_GROUPS = [
+    { code: 'chest', name: 'Chest' },
+    { code: 'back', name: 'Back' },
+    { code: 'shoulders', name: 'Shoulders' },
+    { code: 'biceps', name: 'Biceps' },
+    { code: 'triceps', name: 'Triceps' },
+    { code: 'forearms', name: 'Forearms' },
+    { code: 'abs', name: 'Abs' },
+    { code: 'obliques', name: 'Obliques' },
+    { code: 'lats', name: 'Lats' },
+    { code: 'deltoids', name: 'Deltoids' },
+    { code: 'quads', name: 'Quads' },
+    { code: 'hamstrings', name: 'Hamstrings' },
+    { code: 'glutes', name: 'Glutes' },
+    { code: 'calves', name: 'Calves' },
+]

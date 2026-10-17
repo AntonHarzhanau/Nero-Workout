@@ -1,5 +1,16 @@
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, type Relation, UpdateDateColumn } from 'typeorm';
-import { PlanExercise } from '../../plans/entities/plan-exercise.entity.js';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  type Relation,
+  RelationId,
+  UpdateDateColumn,
+} from 'typeorm';
+import { MuscleGroup } from '../../muscle-groups/entities/muscle-group.entity.js';
 
 export enum ExerciseVisibility {
   PUBLIC = 'public',
@@ -27,8 +38,20 @@ export class Exercise {
   })
   visibility: ExerciseVisibility;
 
-  @Column({ name: 'muscle_group', type: 'varchar', length: 120 })
-  muscleGroup: string;
+  @ManyToMany(() => MuscleGroup, (group) => group.exercises)
+  @JoinTable({
+    schema: 'workouts',
+    name: 'exercise_muscle_groups',
+    joinColumn: {
+      name: 'exercise_id',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'muscle_group_id',
+      referencedColumnName: 'id',
+    },
+  })
+  muscleGroups: Relation<MuscleGroup[]>;
 
   @Column({ name: 'equipment', type: 'varchar', length: 120, nullable: true })
   equipment: string | null;
@@ -39,6 +62,6 @@ export class Exercise {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 
-  @OneToMany(() => PlanExercise, (planExercise) => planExercise.exercise)
-  planExercises: Relation<PlanExercise[]>;
+  @RelationId((exercise: Exercise) => exercise.muscleGroups)
+  muscleGroupIds: string[];
 }

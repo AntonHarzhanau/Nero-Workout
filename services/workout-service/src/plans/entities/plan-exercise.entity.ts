@@ -3,11 +3,13 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Plan } from './plan.entity.js';
 import type { Relation } from 'typeorm';
 import { Exercise } from '../../exercises/entities/exercise.entity.js';
+import { PlanSet } from './plan-set.entity.js';
 
 @Entity({ schema: 'workouts', name: 'plan_exercises' })
 export class PlanExercise {
@@ -30,11 +32,15 @@ export class PlanExercise {
   @JoinColumn({ name: 'plan_id' })
   plan: Relation<Plan>;
 
-  @ManyToOne(() => Exercise, (exercise) => exercise.planExercises, {
+  @ManyToOne(() => Exercise, {
     nullable: false,
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'exercise_id' })
   exercise: Relation<Exercise>;
 
+  @OneToMany(() => PlanSet, (set) => set.planExercise, {
+    cascade: ['insert', 'update'],
+  })
+  sets: Relation<PlanSet[]>;
 }
