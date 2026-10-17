@@ -1,6 +1,7 @@
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 export default {
   testRunner: 'vitest',
+  ignoreStatic: true,
 
   mutate: [
     'src/**/*.ts',
