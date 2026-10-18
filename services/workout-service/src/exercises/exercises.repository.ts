@@ -5,6 +5,7 @@ import type { FindOptionsWhere } from 'typeorm';
 import { ExerciseScope, FindExerciseDto } from './dto/find-exercise.dto.js';
 import { Exercise, ExerciseVisibility } from './entities/exercise.entity.js';
 import type { SaveExerciseInput } from './exercise.types.js';
+import type { EntityManager } from 'typeorm';
 
 @Injectable()
 export class ExercisesRepository {
@@ -85,6 +86,16 @@ export class ExercisesRepository {
 
   async deleteById(id: string): Promise<void> {
     await this.repository.delete(id);
+  }
+
+  async deletePrivateForUser(
+    userId: string,
+    manager: EntityManager,
+  ): Promise<void> {
+    await manager.delete(Exercise, {
+      ownerId: userId,
+      visibility: ExerciseVisibility.PRIVATE,
+    });
   }
 
   private buildFilters(query: FindExerciseDto): FindOptionsWhere<Exercise> {

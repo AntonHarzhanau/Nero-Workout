@@ -156,6 +156,10 @@ export class WorkoutsRepository {
     return Boolean(result.affected);
   }
 
+  async deleteAllForUser(userId: string, manager: EntityManager): Promise<void> {
+    await manager.delete(Workout, { ownerId: userId });
+  }
+
   private async lockOwnedWorkout(
     manager: EntityManager,
     userId: string,

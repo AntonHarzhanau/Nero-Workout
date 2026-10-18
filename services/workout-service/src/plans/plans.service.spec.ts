@@ -1,3 +1,4 @@
+import type { EntityManager } from 'typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { ExercisesService } from '../exercises/exercises.service.js';
 import { ExerciseVisibility } from '../exercises/entities/exercise.entity.js';
@@ -234,5 +235,23 @@ describe('PlansService', () => {
   it('returns no data after successful deletion', async () => {
     const { service } = setup();
     await expect(service.delete('owner', 'plan')).resolves.toBeUndefined();
+  });
+});
+
+describe('plans account cleanup delegation', () => {
+  it('forwards the owner and transaction manager and propagates database failures', async () => {
+    const { service, repository } = setup();
+    const operation = vi.fn().mockResolvedValue(undefined);
+    Object.assign(repository, { deleteAllForUser: operation });
+    const manager = {} as EntityManager;
+    await expect(
+      service.deleteAllForUser('owner', manager),
+    ).resolves.toBeUndefined();
+    expect(operation).toHaveBeenCalledExactlyOnceWith('owner', manager);
+    const error = new Error('Delete failed');
+    operation.mockRejectedValue(error);
+    await expect(service.deleteAllForUser('owner', manager)).rejects.toBe(
+      error,
+    );
   });
 });
