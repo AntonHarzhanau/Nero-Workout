@@ -163,8 +163,11 @@ describe('PlansService', () => {
   });
 
   it('passes a complete replacement to the repository and reloads details', async () => {
-    const { service, repository, dto } = setup();
+    const { service, repository, exercises, dto } = setup();
     const result = await service.update('owner', 'plan', dto);
+    expect(exercises.assertAvailableToUser).toHaveBeenCalledWith('owner', [
+      'exercise',
+    ]);
     expect(repository.replaceOwned).toHaveBeenCalledWith(
       'owner',
       'plan',
