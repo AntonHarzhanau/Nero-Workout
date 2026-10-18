@@ -9,6 +9,20 @@ import type { ExerciseView } from '../exercises/exercise.types.js';
 import { ExerciseVisibility } from '../exercises/entities/exercise.entity.js';
 
 describe('Plan mapper', () => {
+  it('reports the missing catalog ID instead of producing incomplete detail data', () => {
+    const plan = Object.assign(new Plan(), {
+      planExercises: [
+        Object.assign(new PlanExercise(), {
+          exerciseId: 'missing-catalog-id',
+          sets: [],
+        }),
+      ],
+    });
+    expect(() => toPlanView(plan, [])).toThrow(
+      new Error('Missing exercise data: missing-catalog-id'),
+    );
+  });
+
   it('assigns exercise and set positions and normalizes decimal weights without changing input', () => {
     const dto = {
       title: '  Plan  ',

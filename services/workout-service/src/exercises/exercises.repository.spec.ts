@@ -1,3 +1,4 @@
+import type { EntityManager } from 'typeorm';
 import { ILike, In, type Repository } from 'typeorm';
 import { ExerciseScope, FindExerciseDto } from './dto/find-exercise.dto.js';
 import { Exercise, ExerciseVisibility } from './entities/exercise.entity.js';
@@ -190,5 +191,26 @@ describe('ExercisesRepository', () => {
     const { repository, orm } = setup();
     await expect(repository.deleteById('exercise')).resolves.toBeUndefined();
     expect(orm.delete).toHaveBeenCalledWith('exercise');
+  });
+});
+
+describe('exercises account cleanup persistence', () => {
+  it('deletes only the requested owner data using the supplied transaction', async () => {
+    const { repository, orm } = setup();
+    const remove = vi.fn().mockResolvedValue({ affected: 0 });
+    const manager = { delete: remove } as unknown as EntityManager;
+    await expect(
+      repository.deletePrivateForUser('owner', manager),
+    ).resolves.toBeUndefined();
+    expect(remove).toHaveBeenCalledExactlyOnceWith(Exercise, {
+      ownerId: 'owner',
+      visibility: ExerciseVisibility.PRIVATE,
+    });
+    expect(orm.delete).not.toHaveBeenCalled();
+    const error = new Error('Delete failed');
+    remove.mockRejectedValue(error);
+    await expect(
+      repository.deletePrivateForUser('owner', manager),
+    ).rejects.toBe(error);
   });
 });

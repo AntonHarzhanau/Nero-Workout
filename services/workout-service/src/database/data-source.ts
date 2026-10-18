@@ -1,6 +1,5 @@
 import { DataSource } from 'typeorm';
 import { fileURLToPath } from 'url';
-import { resolve } from 'path';
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -12,19 +11,25 @@ function requiredEnv(name: string): string {
   return value;
 }
 
+const extension = import.meta.url.endsWith('.ts') ? 'ts' : 'js';
+
 export default new DataSource({
   type: 'postgres',
+
   host: requiredEnv('DB_HOST'),
   port: Number(requiredEnv('DB_PORT')),
   username: requiredEnv('DB_USER'),
   password: requiredEnv('DB_PASSWORD'),
   database: requiredEnv('DB_NAME'),
+
   schema: 'workouts',
 
-  entities: [resolve(process.cwd(), 'src/**/*.entity.ts')],
+  entities: [
+    fileURLToPath(new URL(`../**/*.entity.${extension}`, import.meta.url)),
+  ],
 
   migrations: [
-    fileURLToPath(new URL('./migrations/*.ts', import.meta.url)),
+    fileURLToPath(new URL(`./migrations/*.${extension}`, import.meta.url)),
   ],
   synchronize: false,
   migrationsRun: false,

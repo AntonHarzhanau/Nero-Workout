@@ -98,7 +98,6 @@ export class PlansRepository {
       const repository = manager.getRepository(PlanExercise);
       const count = await repository.countBy({ planId });
 
-      // The capacity check and position allocation share the parent row lock.
       assertCanAddPlanExercise(count);
 
       const last = await repository.findOne({
@@ -148,6 +147,13 @@ export class PlansRepository {
     });
 
     return Boolean(result.affected);
+  }
+
+  async deleteAllForUser(
+    userId: string,
+    manager: EntityManager,
+  ): Promise<void> {
+    await manager.delete(Plan, { ownerId: userId });
   }
 
   private async lockOwnedPlan(

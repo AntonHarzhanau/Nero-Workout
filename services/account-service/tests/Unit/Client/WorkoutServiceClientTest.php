@@ -39,6 +39,7 @@ final class WorkoutServiceClientTest extends TestCase
         yield 'server error' => [new MockResponse('', ['http_code' => 500])];
         yield 'not found' => [new MockResponse('', ['http_code' => 404])];
         yield 'forbidden (wrong token)' => [new MockResponse('', ['http_code' => 403])];
+        yield 'unauthorized' => [new MockResponse('', ['http_code' => 401])];
         yield 'network error' => [new MockResponse('', ['error' => 'Could not resolve host: workout-service'])];
     }
 
@@ -50,15 +51,26 @@ final class WorkoutServiceClientTest extends TestCase
         $this->client(new MockHttpClient($response), 'http://workout-service:3001')->deleteUserData(Uuid::v7());
     }
 
-    public function testDoesNothingWhenTheServiceUrlIsNotConfigured(): void
+    public static function missingServiceUrls(): iterable
+    {
+        yield 'empty' => [''];
+        yield 'whitespace' => [" \t\n"];
+    }
+
+    #[DataProvider('missingServiceUrls')]
+    public function testMissingServiceUrlFailsWithoutSendingARequest(string $baseUrl): void
     {
         $http = new MockHttpClient(function (): never {
             self::fail('No request must be sent');
         });
 
-        $this->client($http, '')->deleteUserData(Uuid::v7());
+        $this->expectException(UserDataCleanupFailedException::class);
 
-        self::assertSame(0, $http->getRequestsCount());
+        try {
+            $this->client($http, $baseUrl)->deleteUserData(Uuid::v7());
+        } finally {
+            self::assertSame(0, $http->getRequestsCount());
+        }
     }
 
     private function client(MockHttpClient $http, string $baseUrl): WorkoutServiceClient

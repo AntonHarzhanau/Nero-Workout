@@ -19,6 +19,7 @@ import {
   type PaginatedResult,
   createPaginatedResult,
 } from '../common/pagination.js';
+import type { EntityManager } from 'typeorm';
 
 @Injectable()
 export class ExercisesService {
@@ -148,6 +149,13 @@ export class ExercisesService {
     }
 
     return exercises.map(toExerciseView);
+  }
+
+  async deletePrivateForUser(
+    userId: string,
+    manager: EntityManager,
+  ): Promise<void> {
+    await this.exercisesRepository.deletePrivateForUser(userId, manager);
   }
 
   private async requireExistingExercise(exerciseId: string): Promise<Exercise> {
