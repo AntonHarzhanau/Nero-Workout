@@ -3,10 +3,9 @@ import {
   NotFoundException,
   ValidationPipe,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { AuthGuard } from '../auth/auth.guard.js';
+import { authorization, TestAuthModule } from '../../test/helpers/auth.js';
 import { WorkoutsController } from './workouts.controller.js';
 import { WorkoutsService } from './workouts.service.js';
 
@@ -25,12 +24,9 @@ describe('WorkoutsController HTTP validation', () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
+      imports: [TestAuthModule],
       controllers: [WorkoutsController],
-      providers: [
-        { provide: WorkoutsService, useValue: service },
-        AuthGuard,
-        { provide: ConfigService, useValue: new ConfigService() },
-      ],
+      providers: [{ provide: WorkoutsService, useValue: service }],
     }).compile();
     app = module.createNestApplication();
     app.useGlobalPipes(
@@ -90,7 +86,7 @@ describe('WorkoutsController HTTP validation', () => {
       const path = method === 'post' ? '/workouts' : `/workouts/${id}`;
       await request(app.getHttpServer())
         [method](path)
-        .set('X-Dev-User', 'user1')
+        .set('Authorization', authorization('user1'))
         .send({
           title: 'Workout',
           workoutDate: '2026-10-17',
@@ -106,7 +102,7 @@ describe('WorkoutsController HTTP validation', () => {
   it('does not accept an owner supplied in the body', async () => {
     await request(app.getHttpServer())
       .post('/workouts')
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .send({
         title: 'Workout',
         workoutDate: '2026-10-16',
@@ -121,7 +117,7 @@ describe('WorkoutsController HTTP validation', () => {
     service.create.mockResolvedValue({ id });
     await request(app.getHttpServer())
       .post('/workouts')
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .send({ title: 'Workout', workoutDate: '2026-10-16', exercises: [] })
       .expect(201);
     expect(service.create).toHaveBeenCalledWith(
@@ -133,7 +129,7 @@ describe('WorkoutsController HTTP validation', () => {
   it('validates the inclusion id for deletion', async () => {
     await request(app.getHttpServer())
       .delete(`/workouts/${id}/exercises/invalid`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .expect(400);
     expect(service.removeExercise).not.toHaveBeenCalled();
   });
@@ -148,13 +144,13 @@ describe('WorkoutsController HTTP validation', () => {
     service.findOne.mockResolvedValue({ ...summary, exercises: [] });
     const list = await request(app.getHttpServer())
       .get('/workouts')
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .expect(200);
     expect(list.body).toEqual([summary]);
     expect(service.findMine).toHaveBeenCalledWith(id);
     const detail = await request(app.getHttpServer())
       .get(`/workouts/${id}`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .expect(200);
     expect(detail.body).toEqual({ ...summary, exercises: [] });
     expect(service.findOne).toHaveBeenCalledWith(id, id);
@@ -170,7 +166,7 @@ describe('WorkoutsController HTTP validation', () => {
     service.update.mockResolvedValue({ id, ...replacement });
     const updated = await request(app.getHttpServer())
       .put(`/workouts/${id}`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .send(replacement)
       .expect(200);
     expect(updated.body).toEqual({ id, ...replacement });
@@ -179,7 +175,7 @@ describe('WorkoutsController HTTP validation', () => {
     service.addExercise.mockResolvedValue({ id, position: 1, ...input });
     const added = await request(app.getHttpServer())
       .post(`/workouts/${id}/exercises`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .send(input)
       .expect(201);
     expect(added.body).toEqual({ id, position: 1, ...input });
@@ -190,13 +186,13 @@ describe('WorkoutsController HTTP validation', () => {
     const inclusion = '22222222-2222-4222-8222-222222222222';
     const removed = await request(app.getHttpServer())
       .delete(`/workouts/${id}/exercises/${inclusion}`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .expect(204);
     expect(removed.text).toBe('');
     expect(service.removeExercise).toHaveBeenCalledWith(id, id, inclusion);
     const deleted = await request(app.getHttpServer())
       .delete(`/workouts/${id}`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .expect(204);
     expect(deleted.text).toBe('');
     expect(service.delete).toHaveBeenCalledWith(id, id);
@@ -211,7 +207,7 @@ describe('WorkoutsController HTTP validation', () => {
   ] as const)('rejects invalid workout IDs for %s %s', async (method, path) => {
     await request(app.getHttpServer())
       [method](path)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .expect(400);
     for (const mock of Object.values(service))
       expect(mock).not.toHaveBeenCalled();
@@ -233,7 +229,7 @@ describe('WorkoutsController HTTP validation', () => {
   it('validates nested sets on the incremental addition endpoint', async () => {
     await request(app.getHttpServer())
       .post(`/workouts/${id}/exercises`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .send({ exerciseId: id, sets: [{ weightKg: -1, reps: 8 }] })
       .expect(400);
     expect(service.addExercise).not.toHaveBeenCalled();
@@ -245,7 +241,7 @@ describe('WorkoutsController HTTP validation', () => {
     );
     const response = await request(app.getHttpServer())
       .get(`/workouts/${id}`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .expect(404);
     expect(response.body.message).toBe('Workout not found');
   });

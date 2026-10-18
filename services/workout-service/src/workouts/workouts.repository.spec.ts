@@ -306,3 +306,23 @@ describe('WorkoutsRepository', () => {
     },
   );
 });
+
+describe('workouts account cleanup persistence', () => {
+  it('deletes only the requested owner data using the supplied transaction', async () => {
+    const { repository, orm } = setup();
+    const remove = vi.fn().mockResolvedValue({ affected: 0 });
+    const manager = { delete: remove } as unknown as EntityManager;
+    await expect(
+      repository.deleteAllForUser('owner', manager),
+    ).resolves.toBeUndefined();
+    expect(remove).toHaveBeenCalledExactlyOnceWith(Workout, {
+      ownerId: 'owner',
+    });
+    expect(orm.delete).not.toHaveBeenCalled();
+    const error = new Error('Delete failed');
+    remove.mockRejectedValue(error);
+    await expect(repository.deleteAllForUser('owner', manager)).rejects.toBe(
+      error,
+    );
+  });
+});

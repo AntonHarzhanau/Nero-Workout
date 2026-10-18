@@ -17,5 +17,6 @@ import { WorkoutSet } from './entities/workout-set.entity.js';
   ],
   controllers: [WorkoutsController],
   providers: [WorkoutsRepository, WorkoutsService],
+  exports: [WorkoutsService],
 })
 export class WorkoutsModule {}

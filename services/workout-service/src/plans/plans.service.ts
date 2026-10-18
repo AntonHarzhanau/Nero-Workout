@@ -13,6 +13,7 @@ import {
 } from './plan.mapper.js';
 import type { PlanExerciseView, PlanSummary, PlanView } from './plan.types.js';
 import { PlansRepository } from './plans.repository.js';
+import type { EntityManager } from 'typeorm';
 
 @Injectable()
 export class PlansService {
@@ -104,6 +105,13 @@ export class PlansService {
     if (!deleted) {
       throw new NotFoundException('Plan not found');
     }
+  }
+
+  async deleteAllForUser(
+    userId: string,
+    manager: EntityManager,
+  ): Promise<void> {
+    await this.plansRepository.deleteAllForUser(userId, manager);
   }
 
   private async ensureOwned(userId: string, planId: string): Promise<void> {

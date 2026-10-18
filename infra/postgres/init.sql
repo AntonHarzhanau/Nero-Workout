@@ -1,5 +1,7 @@
 \set ON_ERROR_STOP on
 
+\getenv db_name POSTGRES_DB
+
 \getenv account_user ACCOUNT_DB_USER
 \getenv account_password ACCOUNT_DB_PASSWORD
 
@@ -8,6 +10,8 @@
 
 \getenv statistics_user STATISTICS_DB_USER
 \getenv statistics_password STATISTICS_DB_PASSWORD
+
+BEGIN;
 
 CREATE ROLE :"account_user"
     LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE
@@ -29,11 +33,13 @@ REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
 
-ALTER ROLE :"account_user" IN DATABASE nero
+ALTER ROLE :"account_user" IN DATABASE :"db_name"
     SET search_path = accounts, public;
 
-ALTER ROLE :"workout_user" IN DATABASE nero
+ALTER ROLE :"workout_user" IN DATABASE :"db_name"
     SET search_path = workouts, public;
 
-ALTER ROLE :"statistics_user" IN DATABASE nero
+ALTER ROLE :"statistics_user" IN DATABASE :"db_name"
     SET search_path = statistics, public;
+
+COMMIT;

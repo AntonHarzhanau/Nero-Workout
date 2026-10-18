@@ -17,6 +17,7 @@ import type {
   WorkoutView,
 } from './workout.types.js';
 import { WorkoutsRepository } from './workouts.repository.js';
+import type { EntityManager } from 'typeorm';
 
 @Injectable()
 export class WorkoutsService {
@@ -125,6 +126,13 @@ export class WorkoutsService {
     if (!deleted) {
       throw new NotFoundException('Workout not found');
     }
+  }
+
+  async deleteAllForUser(
+    userId: string,
+    manager: EntityManager,
+  ): Promise<void> {
+    await this.workoutsRepository.deleteAllForUser(userId, manager);
   }
 
   private async ensureOwned(userId: string, workoutId: string): Promise<void> {

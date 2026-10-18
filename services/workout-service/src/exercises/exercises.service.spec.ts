@@ -1,3 +1,4 @@
+import type { EntityManager } from 'typeorm';
 import {
   BadRequestException,
   ForbiddenException,
@@ -284,5 +285,23 @@ describe('ExercisesService', () => {
     await expect(
       service.getAvailableByIds('owner', ['exercise', 'missing']),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+});
+
+describe('exercises account cleanup delegation', () => {
+  it('forwards the owner and transaction manager and propagates database failures', async () => {
+    const { service, repository } = setup();
+    const operation = vi.fn().mockResolvedValue(undefined);
+    Object.assign(repository, { deletePrivateForUser: operation });
+    const manager = {} as EntityManager;
+    await expect(
+      service.deletePrivateForUser('owner', manager),
+    ).resolves.toBeUndefined();
+    expect(operation).toHaveBeenCalledExactlyOnceWith('owner', manager);
+    const error = new Error('Delete failed');
+    operation.mockRejectedValue(error);
+    await expect(service.deletePrivateForUser('owner', manager)).rejects.toBe(
+      error,
+    );
   });
 });

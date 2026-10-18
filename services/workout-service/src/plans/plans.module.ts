@@ -17,5 +17,6 @@ import { PlansRepository } from './plans.repository.js';
   ],
   controllers: [PlansController],
   providers: [PlansRepository, PlansService],
+  exports: [PlansService],
 })
 export class PlansModule {}

@@ -2,7 +2,7 @@
 .env.*
 !.env.example
 
-secrets/
+
 
 node_modules/
 .next/

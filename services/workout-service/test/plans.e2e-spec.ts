@@ -1,3 +1,5 @@
+import { AuthModule } from '../src/auth/auth.module.js';
+import { authorization, TestAuthModule } from './helpers/auth.js';
 import { type INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
@@ -49,7 +51,10 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
         }),
         PlansModule,
       ],
-    }).compile();
+    })
+      .overrideModule(AuthModule)
+      .useModule(TestAuthModule)
+      .compile();
     source = module.get(DataSource);
     await source.query('CREATE SCHEMA IF NOT EXISTS workouts');
     await source.runMigrations();
@@ -74,7 +79,7 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
     await source.query('TRUNCATE workouts.plans, workouts.exercises CASCADE');
     const response = await request(app.getHttpServer())
       .post('/exercises')
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .send({ title: 'Bench press', muscleGroups: [] })
       .expect(201);
     exerciseId = response.body.id;
@@ -83,7 +88,7 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
   function createPlan(exercises = [{ exerciseId, sets }]) {
     return request(app.getHttpServer())
       .post('/plans')
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .send({ title: '  Chest  ', exercises })
       .expect(201);
   }
@@ -91,7 +96,7 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
   function getPlan(id: string, user = 'user1') {
     return request(app.getHttpServer())
       .get(`/plans/${id}`)
-      .set('X-Dev-User', user);
+      .set('Authorization', authorization(user));
   }
 
   it('saves nested positions and decimals and reads current catalog data', async () => {
@@ -103,7 +108,7 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
     });
     await request(app.getHttpServer())
       .put(`/exercises/${exerciseId}`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .send({ title: 'Renamed exercise', muscleGroups: [] })
       .expect(200);
     const fetched = await getPlan(body.id).expect(200);
@@ -114,7 +119,7 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
     const { body } = await createPlan();
     const list = await request(app.getHttpServer())
       .get('/plans')
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .expect(200);
     expect(list.body).toHaveLength(1);
     expect(list.body[0]).not.toHaveProperty('exercises');
@@ -123,25 +128,25 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
       await getPlan(body.id, user).expect(404);
       await request(app.getHttpServer())
         .put(`/plans/${body.id}`)
-        .set('X-Dev-User', user)
+        .set('Authorization', authorization(user))
         .send({ title: 'Changed', exercises: [] })
         .expect(404);
       await request(app.getHttpServer())
         .post(`/plans/${body.id}/exercises`)
-        .set('X-Dev-User', user)
+        .set('Authorization', authorization(user))
         .send({ exerciseId, sets })
         .expect(404);
       await request(app.getHttpServer())
         .delete(`/plans/${body.id}/exercises/${body.exercises[0].id}`)
-        .set('X-Dev-User', user)
+        .set('Authorization', authorization(user))
         .expect(404);
       await request(app.getHttpServer())
         .delete(`/plans/${body.id}`)
-        .set('X-Dev-User', user)
+        .set('Authorization', authorization(user))
         .expect(404);
       const foreignList = await request(app.getHttpServer())
         .get('/plans')
-        .set('X-Dev-User', user)
+        .set('Authorization', authorization(user))
         .expect(200);
       expect(foreignList.body).toEqual([]);
     }
@@ -151,23 +156,23 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
     const { body } = await createPlan();
     const foreign = await request(app.getHttpServer())
       .post('/exercises')
-      .set('X-Dev-User', 'user2')
+      .set('Authorization', authorization('user2'))
       .send({ title: 'Private', muscleGroups: [] })
       .expect(201);
     const exercises = [{ exerciseId: foreign.body.id, sets }];
     await request(app.getHttpServer())
       .post('/plans')
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .send({ title: 'Invalid', exercises })
       .expect(400);
     await request(app.getHttpServer())
       .put(`/plans/${body.id}`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .send({ title: 'Invalid', exercises })
       .expect(400);
     await request(app.getHttpServer())
       .post(`/plans/${body.id}/exercises`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .send(exercises[0])
       .expect(404);
     expect((await getPlan(body.id).expect(200)).body).toEqual(body);
@@ -178,7 +183,7 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
     const { body } = await createPlan();
     const updated = await request(app.getHttpServer())
       .put(`/plans/${body.id}`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .send({
         title: 'Replacement',
         exercises: [
@@ -209,7 +214,7 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
     ).toBe(0);
     const empty = await request(app.getHttpServer())
       .put(`/plans/${body.id}`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .send({ title: 'Empty', exercises: [] })
       .expect(200);
     expect(empty.body.exercises).toEqual([]);
@@ -221,7 +226,7 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
     const add = () =>
       request(app.getHttpServer())
         .post(`/plans/${body.id}/exercises`)
-        .set('X-Dev-User', 'user1')
+        .set('Authorization', authorization('user1'))
         .send({ exerciseId, sets })
         .expect(201);
     const [first, second] = await Promise.all([add(), add()]);
@@ -231,11 +236,11 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
     const other = await createPlan();
     await request(app.getHttpServer())
       .delete(`/plans/${body.id}/exercises/${other.body.exercises[0].id}`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .expect(404);
     await request(app.getHttpServer())
       .delete(`/plans/${body.id}/exercises/${first.body.id}`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .expect(204);
     const fetched = await getPlan(body.id).expect(200);
     expect(
@@ -259,7 +264,7 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
     const add = () =>
       request(app.getHttpServer())
         .post(`/plans/${body.id}/exercises`)
-        .set('X-Dev-User', 'user1')
+        .set('Authorization', authorization('user1'))
         .send({ exerciseId, sets: [] });
     const responses = await Promise.all([add(), add()]);
     expect(
@@ -278,7 +283,7 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
     try {
       await request(app.getHttpServer())
         .put(`/plans/${body.id}`)
-        .set('X-Dev-User', 'user1')
+        .set('Authorization', authorization('user1'))
         .send({
           title: 'Must roll back',
           exercises: [{ exerciseId, sets: [{ weightKg: 80, reps: 20 }] }],
@@ -300,7 +305,7 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
     try {
       await request(app.getHttpServer())
         .post(`/plans/${body.id}/exercises`)
-        .set('X-Dev-User', 'user1')
+        .set('Authorization', authorization('user1'))
         .send({ exerciseId, sets: [{ weightKg: 80, reps: 20 }] })
         .expect(500);
       expect((await getPlan(body.id).expect(200)).body).toEqual(body);
@@ -316,7 +321,7 @@ describe.skipIf(!databaseUrl)('Plans API with PostgreSQL', () => {
     const { body } = await createPlan();
     await request(app.getHttpServer())
       .delete(`/plans/${body.id}`)
-      .set('X-Dev-User', 'user1')
+      .set('Authorization', authorization('user1'))
       .expect(204);
     expect(await source.getRepository(Plan).count()).toBe(0);
     expect(await source.getRepository(PlanExercise).count()).toBe(0);
