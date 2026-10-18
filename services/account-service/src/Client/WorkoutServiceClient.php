@@ -28,10 +28,8 @@ class WorkoutServiceClient
      */
     public function deleteUserData(Uuid $userId): void
     {
-        if ('' === $this->baseUrl) {
-            $this->logger->warning('WORKOUT_SERVICE_URL is not set: workout data of user {id} was not deleted.', ['id' => $userId->toRfc4122()]);
-
-            return;
+        if ('' === trim($this->baseUrl)) {
+            throw new UserDataCleanupFailedException('workout-service');
         }
 
         try {
