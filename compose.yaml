@@ -1,26 +1,4 @@
 services:
-  workout-service:
-    build:
-      context: ./services/workout-service
-      target: runtime
-
-    environment:
-      NODE_ENV: production
-
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: ${POSTGRES_DB:?POSTGRES_DB is required}
-      DB_USER: ${WORKOUT_DB_USER:?WORKOUT_DB_USER is required}
-      DB_PASSWORD: ${WORKOUT_DB_PASSWORD:?WORKOUT_DB_PASSWORD is required}
-
-    ports:
-      - "127.0.0.1:3001:3001"
-
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-    init: true
 
   postgres:
     image: postgres:17
@@ -39,9 +17,6 @@ services:
       STATISTICS_DB_USER: ${STATISTICS_DB_USER:?STATISTICS_DB_USER is required}
       STATISTICS_DB_PASSWORD: ${STATISTICS_DB_PASSWORD:?STATISTICS_DB_PASSWORD is required}
 
-    ports:
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
@@ -49,11 +24,45 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+        - pg_isready -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s
+
+  init-secrets:
+    build:
+      context: ./infra/secrets
+
+    restart: "no"
+    network_mode: none
+
+    volumes:
+      - jwt_private:/generated/private
+      - jwt_public:/generated/public
+      - internal_token:/generated/internal
+
+  account-migration:
+    build:
+      context: ./services/account-service
+      target: runtime
+
+    environment:
+      DATABASE_URL: "postgresql://${ACCOUNT_DB_USER:?ACCOUNT_DB_USER is required}:${ACCOUNT_DB_PASSWORD:?ACCOUNT_DB_PASSWORD is required}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB is required}?serverVersion=17&charset=utf8"
+      APP_SECRET: ${ACCOUNT_APP_SECRET}
+      DEFAULT_URI: http://localhost:${ACCOUNT_PORT:-8081}
+
+    command:
+      - php
+      - bin/console
+      - doctrine:migrations:migrate
+      - --no-interaction
+
+    restart: "no"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   account-service:
     build:
@@ -61,33 +70,93 @@ services:
       target: runtime
 
     environment:
-      DATABASE_URL: postgresql://${ACCOUNT_DB_USER}:${ACCOUNT_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}?serverVersion=17&charset=utf8
-      DEFAULT_URI: http://localhost:8081
-      JWT_SECRET_KEY: /run/secrets/jwt_private
-      JWT_PUBLIC_KEY: /run/secrets/jwt_public
-      JWT_PASSPHRASE: ""
-      INTERNAL_API_TOKEN_FILE: /run/secrets/internal_api_token
-      WORKOUT_SERVICE_URL: ""
+      DATABASE_URL: "postgresql://${ACCOUNT_DB_USER:?ACCOUNT_DB_USER is required}:${ACCOUNT_DB_PASSWORD:?ACCOUNT_DB_PASSWORD is required}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB is required}?serverVersion=17&charset=utf8"
+      APP_SECRET: ${ACCOUNT_APP_SECRET}
+      DEFAULT_URI: http://localhost:${ACCOUNT_PORT:-8081}
 
-    secrets:
-      - jwt_private
-      - jwt_public
-      - internal_api_token
+      JWT_SECRET_KEY: /run/nero/private/jwt_private.pem
+      JWT_PUBLIC_KEY: /run/nero/public/jwt_public.pem
+      JWT_PASSPHRASE: ""
+
+      INTERNAL_API_TOKEN_FILE: /run/nero/internal/internal_api_token
+      WORKOUT_SERVICE_URL: http://workout-service:3001
 
     ports:
-      - "127.0.0.1:8081:8080"
+      - "127.0.0.1:${ACCOUNT_PORT:-8081}:8080"
+
+    volumes:
+      - jwt_private:/run/nero/private:ro
+      - jwt_public:/run/nero/public:ro
+      - internal_token:/run/nero/internal:ro
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-secrets:
+        condition: service_completed_successfully
+      account-migration:
+        condition: service_completed_successfully
+
+  workout-migration:
+    build:
+      context: ./services/workout-service
+      target: runtime
+
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB:?POSTGRES_DB is required}
+      DB_USER: ${WORKOUT_DB_USER:?WORKOUT_DB_USER is required}
+      DB_PASSWORD: ${WORKOUT_DB_PASSWORD:?WORKOUT_DB_PASSWORD is required}
+
+    command:
+      - node
+      - node_modules/typeorm/cli.js
+      - migration:run
+      - -d
+      - dist/database/data-source.js
+
+    restart: "no"
 
     depends_on:
       postgres:
         condition: service_healthy
 
-secrets:
-  jwt_private:
-    file: ./secrets/jwt_private.pem
-  jwt_public:
-    file: ./secrets/jwt_public.pem
-  internal_api_token:
-    file: ./secrets/internal_api_token
+  workout-service:
+    build:
+      context: ./services/workout-service
+      target: runtime
+
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB:?POSTGRES_DB is required}
+      DB_USER: ${WORKOUT_DB_USER:?WORKOUT_DB_USER is required}
+      DB_PASSWORD: ${WORKOUT_DB_PASSWORD:?WORKOUT_DB_PASSWORD is required}
+      INTERNAL_API_TOKEN_FILE: /run/nero/internal/internal_api_token
+
+      JWT_PUBLIC_KEY: /run/nero/public/jwt_public.pem
+
+    ports:
+      - "127.0.0.1:${WORKOUT_PORT:-3001}:3001"
+
+    volumes:
+      - jwt_public:/run/nero/public:ro
+      - internal_token:/run/nero/internal:ro
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-secrets:
+        condition: service_completed_successfully
+      workout-migration:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data:
+  jwt_private:
+  jwt_public:
+  internal_token:

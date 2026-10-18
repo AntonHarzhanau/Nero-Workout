@@ -15,7 +15,7 @@ export function createTypeOrmOptions(config: ConfigService): TypeOrmModuleOption
         schema: 'workouts',
         autoLoadEntities: true,
         synchronize: false,
-        logging: isProduction ? ['error'] : ['error', 'query'],
+        logging: isProduction ? ['error'] : ['error'],
         maxQueryExecutionTime: 200
     }
 }
