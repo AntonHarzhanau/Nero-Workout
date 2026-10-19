@@ -1,19 +1,59 @@
-import { requireCurrentUser } from "@/features/auth/get-current-user";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { getLoginUrl } from "@/features/auth/return-to";
+import { UsersTable } from "@/features/users/components/users-table";
+import { requireAdmin } from "@/features/users/require-admin";
+import { usersApi } from "@/features/users/users-api";
 
 export default async function UsersPage() {
-  const user = await requireCurrentUser();
+  const { user: admin, accessToken } = await requireAdmin();
 
-  if (user.role !== "admin") {
-    notFound();
+  const result = await usersApi.list(accessToken);
+
+  if (!result.ok) {
+    if (result.error.status === 401) {
+      redirect(getLoginUrl("/users"));
+    }
+
+    if (result.error.status === 403) {
+      notFound();
+    }
+
+    throw new Error(result.error.message);
   }
 
+  const users = result.data.items;
+
   return (
-    <section className="space-y-4">
-        <h1 className="font-heading text-3xl">Utilisateurs</h1>
+    <section className="space-y-7">
+      <header className="space-y-2">
+        <h1 className="font-heading text-3xl sm:text-4xl">Utilisateurs</h1>
+
         <p className="text-sm text-muted-foreground">
-          Gestion des utilisateurs.
+          Consultez les comptes et gérez les utilisateurs.
         </p>
+      </header>
+
+      <Card className="min-w-0">
+        <CardHeader>
+          <CardTitle>Comptes ({users.length})</CardTitle>
+
+          <CardDescription>
+            La suppression d’un compte supprime également ses données
+            personnelles d’entraînement.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <UsersTable users={users} currentUserId={admin.id} />
+        </CardContent>
+      </Card>
     </section>
-  )
+  );
 }
