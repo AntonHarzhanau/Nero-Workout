@@ -14,15 +14,12 @@ export function ListPagination({
   onPageChange,
 }: ListPaginationProps) {
   if (meta.total === 0) return null;
-  const start = (meta.page - 1) * meta.limit + 1;
-  const end = Math.min(meta.page * meta.limit, meta.total);
 
   return (
     <nav
       aria-label="Pagination"
       className="flex flex-wrap items-center justify-between gap-3 border-t pt-5"
     >
-
       <div className="flex items-center gap-2 ml-auto">
         <Button
           type="button"
