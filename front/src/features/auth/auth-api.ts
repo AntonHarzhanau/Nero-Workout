@@ -34,4 +34,12 @@ export const authApi = {
       body: { refreshToken },
     });
   },
+
+  deleteMe(accessToken: string) {
+    return request("/users/me", z.void(), {
+      method: "DELETE",
+      token: accessToken,
+      timeoutMs: 10_000,
+    });
+  },
 };

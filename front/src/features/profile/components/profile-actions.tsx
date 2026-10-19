@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { LogoutButton } from "@/features/auth/components/logout-button";
 import type { User } from "@/features/auth/contracts";
+import { DeleteAccountButton } from "./delete-account-button";
 
 type ProfileActionsProps = {
   role: User["role"];
@@ -55,6 +56,21 @@ export function ProfileActions({ role }: ProfileActionsProps) {
           </CardContent>
         </Card>
       )}
+      <Card className="border-destructive/30">
+        <CardHeader>
+          <CardTitle className="text-destructive">
+            Supprimer mon compte
+          </CardTitle>
+
+          <CardDescription>
+            Supprimez définitivement votre compte et vos données personnelles
+            d’entraînement.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DeleteAccountButton />
+        </CardContent>
+      </Card>
     </div>
   );
 }
