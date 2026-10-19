@@ -10,6 +10,7 @@ import { getLoginUrl } from "@/features/auth/return-to";
 import { UsersTable } from "@/features/users/components/users-table";
 import { requireAdmin } from "@/features/users/require-admin";
 import { usersApi } from "@/features/users/users-api";
+import { PageHeader } from "@/components/page-header";
 
 export default async function UsersPage() {
   const { user: admin, accessToken } = await requireAdmin();
@@ -32,13 +33,10 @@ export default async function UsersPage() {
 
   return (
     <section className="space-y-7">
-      <header className="space-y-2">
-        <h1 className="font-heading text-3xl sm:text-4xl">Utilisateurs</h1>
-
-        <p className="text-sm text-muted-foreground">
-          Consultez les comptes et gérez les utilisateurs.
-        </p>
-      </header>
+      <PageHeader
+        title="Utilisateurs"
+        description="Consultez les comptes et gérez les utilisateurs."
+      />
 
       <Card className="min-w-0">
         <CardHeader>
