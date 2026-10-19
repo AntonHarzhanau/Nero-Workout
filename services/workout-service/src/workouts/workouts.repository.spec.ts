@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import type { DataSource, EntityManager, Repository } from 'typeorm';
 import { Workout } from './entities/workout.entity.js';
 import { WorkoutExercise } from './entities/workout-exercise.entity.js';
@@ -13,6 +14,8 @@ const values: WorkoutValues = {
   exercises: [
     {
       exerciseId: 'catalog',
+      exerciseNameSnapshot: 'Squat',
+      muscleGroupsSnapshot: ['core', 'legs'],
       position: 1,
       sets: [{ position: 1, weightKg: '12.50', reps: 8 }],
     },
@@ -118,6 +121,47 @@ describe('WorkoutsRepository', () => {
       relations: { exercises: { sets: true } },
       order: { exercises: { position: 'ASC', sets: { position: 'ASC' } } },
     });
+  });
+
+  it.each([
+    [{}, undefined],
+    [{ from: '2026-10-01' }, MoreThanOrEqual('2026-10-01')],
+    [{ to: '2026-10-31' }, LessThanOrEqual('2026-10-31')],
+    [
+      { from: '2026-10-01', to: '2026-10-31' },
+      Between('2026-10-01', '2026-10-31'),
+    ],
+    [
+      { from: '2026-10-15', to: '2026-10-15' },
+      Between('2026-10-15', '2026-10-15'),
+    ],
+  ])(
+    'loads all statistics data for only the requested owner and inclusive range %j',
+    async (range, workoutDate) => {
+      const { repository, orm, workout } = setup();
+      await expect(
+        repository.findForStatistics('statistics-owner', range),
+      ).resolves.toEqual([workout]);
+      expect(orm.find).toHaveBeenCalledExactlyOnceWith({
+        where: {
+          ownerId: 'statistics-owner',
+          ...(workoutDate ? { workoutDate } : {}),
+        },
+        relations: { exercises: { sets: true } },
+        order: {
+          workoutDate: 'ASC',
+          id: 'ASC',
+          exercises: { position: 'ASC', sets: { position: 'ASC' } },
+        },
+      });
+    },
+  );
+
+  it('propagates statistics query failures', async () => {
+    const { repository, orm } = setup();
+    const error = new Error('Statistics database failure');
+    orm.find.mockRejectedValue(error);
+    await expect(repository.findForStatistics('owner', {})).rejects.toBe(error);
   });
 
   it.each([true, false])(

@@ -1,6 +1,6 @@
 import { Controller, Delete, HttpCode, HttpStatus, Param, ParseUUIDPipe, UseGuards } from "@nestjs/common";
 import { UserCleanupService } from "./user-cleanup.service.js";
-import { InternalTokenGuard } from "./internal-token.guard.js";
+import { InternalTokenGuard } from "../internal-auth/internal-token.guard.js";
 
 @Controller('internal/users')
 @UseGuards(InternalTokenGuard)

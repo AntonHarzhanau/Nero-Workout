@@ -18,7 +18,10 @@ const exercise: ExerciseView = {
   visibility: ExerciseVisibility.PRIVATE,
   createdAt: new Date('2026-10-17T10:00:00Z'),
   updatedAt: new Date('2026-10-17T10:00:00Z'),
-  muscleGroups: [],
+  muscleGroups: [
+    { id: 'legs-id', code: 'legs', name: 'Legs' },
+    { id: 'core-id', code: 'core', name: 'Core' },
+  ],
 };
 
 function setup() {
@@ -58,7 +61,6 @@ function setup() {
     deleteOwned: vi.fn().mockResolvedValue(true),
   };
   const exercises = {
-    assertAvailableToUser: vi.fn().mockResolvedValue(undefined),
     getAvailableByIds: vi.fn().mockResolvedValue([exercise]),
     findOne: vi.fn().mockResolvedValue(exercise),
   };
@@ -94,7 +96,7 @@ describe('WorkoutsService', () => {
     const { service, repository, exercises } = setup();
     const result = await service.findOne('owner', 'workout');
     expect(repository.findOwnedById).toHaveBeenCalledWith('owner', 'workout');
-    expect(exercises.getAvailableByIds).toHaveBeenCalledWith('owner', [
+    expect(exercises.getAvailableByIds).toHaveBeenNthCalledWith(1, 'owner', [
       'exercise',
     ]);
     expect(result.exercises[0]).toMatchObject({
@@ -115,9 +117,7 @@ describe('WorkoutsService', () => {
 
   it('rejects unavailable exercises before creating a workout', async () => {
     const { service, repository, exercises, dto } = setup();
-    exercises.assertAvailableToUser.mockRejectedValue(
-      new BadRequestException(),
-    );
+    exercises.getAvailableByIds.mockRejectedValue(new BadRequestException());
     await expect(service.create('owner', dto)).rejects.toBeInstanceOf(
       BadRequestException,
     );
@@ -127,7 +127,7 @@ describe('WorkoutsService', () => {
   it('normalizes nested input before saving and returns workout details', async () => {
     const { service, repository, exercises, dto } = setup();
     const result = await service.create('owner', dto);
-    expect(exercises.assertAvailableToUser).toHaveBeenCalledWith('owner', [
+    expect(exercises.getAvailableByIds).toHaveBeenNthCalledWith(1, 'owner', [
       'exercise',
     ]);
     expect(repository.create).toHaveBeenCalledWith('owner', {
@@ -138,6 +138,8 @@ describe('WorkoutsService', () => {
       exercises: [
         {
           exerciseId: 'exercise',
+          exerciseNameSnapshot: exercise.title,
+          muscleGroupsSnapshot: ['core', 'legs'],
           position: 1,
           sets: [{ position: 1, weightKg: '50.00', reps: 10 }],
         },
@@ -155,16 +157,14 @@ describe('WorkoutsService', () => {
         new NotFoundException('Workout not found'),
       );
       expect(repository.existsOwned).toHaveBeenCalledWith(userId, 'workout');
-      expect(exercises.assertAvailableToUser).not.toHaveBeenCalled();
+      expect(exercises.getAvailableByIds).not.toHaveBeenCalled();
       expect(repository.replaceOwned).not.toHaveBeenCalled();
     },
   );
 
   it('does not replace a workout with unavailable exercises', async () => {
     const { service, repository, exercises, dto } = setup();
-    exercises.assertAvailableToUser.mockRejectedValue(
-      new BadRequestException(),
-    );
+    exercises.getAvailableByIds.mockRejectedValue(new BadRequestException());
     await expect(
       service.update('owner', 'workout', dto),
     ).rejects.toBeInstanceOf(BadRequestException);
@@ -174,7 +174,7 @@ describe('WorkoutsService', () => {
   it('passes a complete replacement to the repository and reloads details', async () => {
     const { service, repository, exercises, dto } = setup();
     const result = await service.update('owner', 'workout', dto);
-    expect(exercises.assertAvailableToUser).toHaveBeenCalledWith('owner', [
+    expect(exercises.getAvailableByIds).toHaveBeenNthCalledWith(1, 'owner', [
       'exercise',
     ]);
     expect(repository.replaceOwned).toHaveBeenCalledWith(
@@ -185,7 +185,15 @@ describe('WorkoutsService', () => {
         workoutDate: '2026-10-17',
         durationMinutes: 60,
         description: null,
-        exercises: [expect.objectContaining({ position: 1 })],
+        exercises: [
+          {
+            exerciseId: 'exercise',
+            exerciseNameSnapshot: exercise.title,
+            muscleGroupsSnapshot: ['core', 'legs'],
+            position: 1,
+            sets: [{ position: 1, weightKg: '50.00', reps: 10 }],
+          },
+        ],
       }),
     );
     expect(result.exercises[0].exercise).toEqual(exercise);
@@ -221,6 +229,8 @@ describe('WorkoutsService', () => {
     expect(exercises.findOne).toHaveBeenCalledWith('owner', 'exercise');
     expect(repository.appendExercise).toHaveBeenCalledWith('owner', 'workout', {
       exerciseId: 'exercise',
+      exerciseNameSnapshot: exercise.title,
+      muscleGroupsSnapshot: ['core', 'legs'],
       sets: [{ position: 1, weightKg: '50.00', reps: 10 }],
     });
     expect(result).toMatchObject({ id: 'inclusion', position: 1, exercise });
@@ -280,8 +290,11 @@ describe('WorkoutsService', () => {
     await expect(
       service.create('owner', { ...dto, exercises: [] }),
     ).resolves.toMatchObject({ exercises: [] });
-    expect(exercises.assertAvailableToUser).toHaveBeenCalledWith('owner', []);
     expect(exercises.getAvailableByIds).toHaveBeenCalledWith('owner', []);
+    expect(repository.create).toHaveBeenCalledWith(
+      'owner',
+      expect.objectContaining({ exercises: [] }),
+    );
   });
 
   it('propagates a transaction ownership failure without reloading details', async () => {

@@ -26,6 +26,12 @@ export class WorkoutExercise {
   @Column({ name: 'exercise_id', type: 'uuid' })
   exerciseId: string;
 
+  @Column({ name: 'exercise_name_snapshot', type: 'varchar', length: 120 })
+  exerciseNameSnapshot: string;
+
+  @Column({ name: 'muscle_groups_snapshot', type: 'text', array: true })
+  muscleGroupsSnapshot: string[];
+
   @Column({ type: 'int' })
   position: number;
 

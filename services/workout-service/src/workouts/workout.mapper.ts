@@ -15,9 +15,14 @@ import type {
 
 export function toWorkoutExerciseValues(
   input: WorkoutExerciseInputDto,
+  exercise: ExerciseView,
 ): WorkoutExerciseValues {
   return {
     exerciseId: input.exerciseId,
+    exerciseNameSnapshot: exercise.title,
+    muscleGroupsSnapshot: exercise.muscleGroups
+      .map((group) => group.code)
+      .sort(),
     sets: input.sets.map((set, index) => ({
       position: index + 1,
       weightKg: set.weightKg.toFixed(2),
@@ -26,16 +31,29 @@ export function toWorkoutExerciseValues(
   };
 }
 
-export function toWorkoutValues(dto: CreateWorkoutDto): WorkoutValues {
+export function toWorkoutValues(
+  dto: CreateWorkoutDto,
+  exercises: ExerciseView[],
+): WorkoutValues {
+  const exerciseById = new Map(
+    exercises.map((exercise) => [exercise.id, exercise]),
+  );
+
   return {
     title: dto.title.trim(),
     workoutDate: dto.workoutDate,
     durationMinutes: dto.durationMinutes ?? null,
     description: dto.description ?? null,
-    exercises: dto.exercises.map((item, index) => ({
-      ...toWorkoutExerciseValues(item),
-      position: index + 1,
-    })),
+    exercises: dto.exercises.map((item, index) => {
+      const exercise = exerciseById.get(item.exerciseId);
+      if (!exercise) {
+        throw new Error(`Missing exercise data: ${item.exerciseId}`);
+      }
+      return {
+        ...toWorkoutExerciseValues(item, exercise),
+        position: index + 1,
+      };
+    }),
   };
 }
 

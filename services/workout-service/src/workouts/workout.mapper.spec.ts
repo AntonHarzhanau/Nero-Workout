@@ -18,7 +18,10 @@ function fixture() {
     description: null,
     equipment: null,
     visibility: ExerciseVisibility.PRIVATE,
-    muscleGroups: [],
+    muscleGroups: [
+      { id: 'legs-id', code: 'legs', name: 'Legs' },
+      { id: 'core-id', code: 'core', name: 'Core' },
+    ],
     createdAt: new Date('2026-10-16T10:00:00Z'),
     updatedAt: new Date('2026-10-17T11:00:00Z'),
   };
@@ -70,7 +73,14 @@ describe('Workout mapper', () => {
       ],
     };
     const original = structuredClone(dto);
-    expect(toWorkoutValues(dto)).toEqual({
+    const { exercise } = fixture();
+    const second = {
+      ...exercise,
+      id: 'two',
+      title: 'Second',
+      muscleGroups: [],
+    };
+    expect(toWorkoutValues(dto, [second, exercise])).toEqual({
       title: 'Legs',
       workoutDate: '2026-10-17',
       durationMinutes: 0,
@@ -78,6 +88,8 @@ describe('Workout mapper', () => {
       exercises: [
         {
           exerciseId: 'one',
+          exerciseNameSnapshot: 'Latest catalog title',
+          muscleGroupsSnapshot: ['core', 'legs'],
           position: 1,
           sets: [
             { position: 1, weightKg: '0.00', reps: 20 },
@@ -86,6 +98,8 @@ describe('Workout mapper', () => {
         },
         {
           exerciseId: 'two',
+          exerciseNameSnapshot: 'Second',
+          muscleGroupsSnapshot: [],
           position: 2,
           sets: [{ position: 1, weightKg: '9999.99', reps: 1 }],
         },
@@ -96,11 +110,14 @@ describe('Workout mapper', () => {
 
   it('supplies null defaults and supports an empty workout', () => {
     expect(
-      toWorkoutValues({
-        title: '  Rest  ',
-        workoutDate: '2026-10-18',
-        exercises: [],
-      }),
+      toWorkoutValues(
+        {
+          title: '  Rest  ',
+          workoutDate: '2026-10-18',
+          exercises: [],
+        },
+        [],
+      ),
     ).toEqual({
       title: 'Rest',
       workoutDate: '2026-10-18',
@@ -112,30 +129,71 @@ describe('Workout mapper', () => {
 
   it('preserves explicit optional values', () => {
     expect(
-      toWorkoutValues({
-        title: 'Legs',
-        workoutDate: '2026-10-17',
-        durationMinutes: 45,
-        description: 'Notes',
-        exercises: [],
-      }),
+      toWorkoutValues(
+        {
+          title: 'Legs',
+          workoutDate: '2026-10-17',
+          durationMinutes: 45,
+          description: 'Notes',
+          exercises: [],
+        },
+        [],
+      ),
     ).toMatchObject({ durationMinutes: 45, description: 'Notes' });
     expect(
-      toWorkoutValues({
-        title: 'Legs',
-        workoutDate: '2026-10-17',
-        durationMinutes: null,
-        description: null,
-        exercises: [],
-      }),
+      toWorkoutValues(
+        {
+          title: 'Legs',
+          workoutDate: '2026-10-17',
+          durationMinutes: null,
+          description: null,
+          exercises: [],
+        },
+        [],
+      ),
     ).toMatchObject({ durationMinutes: null, description: null });
   });
 
   it('leaves an appended inclusion position to the repository and allows empty sets', () => {
-    expect(toWorkoutExerciseValues({ exerciseId: 'one', sets: [] })).toEqual({
+    const { exercise } = fixture();
+    const original = structuredClone(exercise);
+    expect(
+      toWorkoutExerciseValues({ exerciseId: 'one', sets: [] }, exercise),
+    ).toEqual({
       exerciseId: 'one',
+      exerciseNameSnapshot: 'Latest catalog title',
+      muscleGroupsSnapshot: ['core', 'legs'],
       sets: [],
     });
+    expect(exercise).toEqual(original);
+  });
+
+  it('records repeated inclusions independently and fails if catalog data is missing', () => {
+    const { exercise } = fixture();
+    const dto = {
+      title: 'Legs',
+      workoutDate: '2026-10-17',
+      exercises: [
+        { exerciseId: 'one', sets: [] },
+        { exerciseId: 'one', sets: [] },
+      ],
+    };
+    const values = toWorkoutValues(dto, [exercise]);
+    expect(
+      values.exercises.map((item) => [
+        item.position,
+        item.exerciseNameSnapshot,
+        item.muscleGroupsSnapshot,
+      ]),
+    ).toEqual([
+      [1, exercise.title, ['core', 'legs']],
+      [2, exercise.title, ['core', 'legs']],
+    ]);
+    values.exercises[0].muscleGroupsSnapshot.push('changed');
+    expect(values.exercises[1].muscleGroupsSnapshot).toEqual(['core', 'legs']);
+    expect(() => toWorkoutValues(dto, [])).toThrow(
+      'Missing exercise data: one',
+    );
   });
 
   it('lists only header fields, including date and duration', () => {
