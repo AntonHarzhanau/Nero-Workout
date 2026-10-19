@@ -4,40 +4,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { readSession } from "@/features/auth/session";
-import type { ActionError, ApiError, ApiResult } from "@/lib/http/api-client";
+import type { ActionError, ApiResult } from "@/lib/http/api-client";
 import {
   exerciseFormSchema,
   type Exercise,
   type ExercisePayload,
 } from "./contracts";
 import { exercisesApi } from "./exercises-api";
+import { mutationError, sessionError } from "@/lib/http/mutation-error";
 
-const sessionError: ApiError = {
-  status: 401,
-  message: "Votre session a expiré. Reconnectez-vous.",
-};
-
-function mutationError(error: ApiError): ApiError {
-  if (error.status === 401) {
-    return sessionError;
-  }
-
-  if (error.status === 403) {
-    return {
-      ...error,
-      message: "Vous n’avez pas l’autorisation d’effectuer cette opération.",
-    };
-  }
-
-  if (error.status === 404) {
-    return {
-      ...error,
-      message: "Cet exercice n’existe plus ou n’est plus accessible.",
-    };
-  }
-
-  return error;
-}
+const notFoundMessage = "Cet exercice n’existe plus ou n’est plus accessible.";
 
 export async function saveExerciseAction(
   exerciseId: unknown,
@@ -91,7 +67,7 @@ export async function saveExerciseAction(
   if (!result.ok) {
     return {
       ok: false,
-      error: mutationError(result.error),
+      error: mutationError(result.error, notFoundMessage),
     };
   }
 
@@ -119,7 +95,7 @@ export async function deleteExerciseAction(
   const result = await exercisesApi.delete(parsed.data, accessToken);
 
   if (!result.ok) {
-    return mutationError(result.error);
+    return mutationError(result.error, notFoundMessage);
   }
 
   revalidatePath("/exercises");
