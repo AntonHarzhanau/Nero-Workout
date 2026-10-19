@@ -6,18 +6,24 @@ import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
 import { ExercisePicker } from "@/features/exercises/components/exercise-picker";
 import type { MuscleGroup } from "@/features/exercises/contracts";
-import { defaultTrainingSets, type TrainingFormValues } from "../contracts";
+import {
+  MAX_SETS,
+  defaultTrainingSets,
+  type TrainingFormValues,
+} from "../contracts";
 import { TrainingExerciseEditor } from "./training-exercise-editor";
 
 type TrainingExercisesEditorProps = {
   groups: MuscleGroup[];
   isAdmin: boolean;
   maxExercises: number;
+  maxSets?: number;
 };
 export function TrainingExercisesEditor({
   groups,
   isAdmin,
   maxExercises,
+  maxSets = MAX_SETS,
 }: TrainingExercisesEditorProps) {
   const [picking, setPicking] = useState(false);
   const {
@@ -42,6 +48,7 @@ export function TrainingExercisesEditor({
           entry={entry}
           index={index}
           count={fields.length}
+          maxSets={maxSets}
           onMove={move}
           onRemove={() => remove(index)}
         />

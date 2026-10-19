@@ -3,8 +3,12 @@ import { formatWeight, trainingTotals } from "../formatters";
 
 type TrainingSummaryProps = {
   exercises: { sets: { weightKg: string | number; reps: number }[] }[];
+  volumeLabel?: string;
 };
-export function TrainingSummary({ exercises }: TrainingSummaryProps) {
+export function TrainingSummary({
+  exercises,
+  volumeLabel = "Volume prévu · kg",
+}: TrainingSummaryProps) {
   const totals = trainingTotals(exercises);
   return (
     <Card className="py-5">
@@ -12,7 +16,7 @@ export function TrainingSummary({ exercises }: TrainingSummaryProps) {
         {[
           { label: "Exercices", value: totals.exercises },
           { label: "Séries", value: totals.sets },
-          { label: "Volume prévu · kg", value: formatWeight(totals.volume) },
+          { label: volumeLabel, value: formatWeight(totals.volume) },
         ].map((item) => (
           <div key={item.label} className="min-w-0 px-1 text-center">
             <p className="wrap-break-words font-heading text-2xl sm:text-3xl">

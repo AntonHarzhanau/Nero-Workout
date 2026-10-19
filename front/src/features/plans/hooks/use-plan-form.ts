@@ -1,6 +1,7 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useActionForm } from "@/hooks/use-action-form";
+import { toTrainingDraft, toTrainingPayload } from "@/features/training/drafts";
 import { savePlanAction } from "../actions";
 import { planFormSchema, type Plan, type PlanFormValues } from "../contracts";
 
@@ -17,10 +18,7 @@ export function usePlanForm({
       const payload = {
         title: values.title,
         description: values.description.trim() || null,
-        exercises: values.exercises.map(({ exerciseId, sets }) => ({
-          exerciseId,
-          sets,
-        })),
+        exercises: toTrainingPayload(values.exercises),
       };
       const result = await savePlanAction(plan?.id ?? null, payload);
       if (!result.ok) return result.error;
@@ -31,15 +29,7 @@ export function usePlanForm({
       defaultValues: {
         title: plan?.title ?? "",
         description: plan?.description ?? "",
-        exercises:
-          plan?.exercises.map((item) => ({
-            exerciseId: item.exerciseId,
-            title: item.exercise.title,
-            sets: item.sets.map((set) => ({
-              weightKg: Number(set.weightKg),
-              reps: set.reps,
-            })),
-          })) ?? [],
+        exercises: toTrainingDraft(plan?.exercises ?? []),
       },
     },
   });

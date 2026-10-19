@@ -3,10 +3,10 @@ import { useState } from "react";
 import { Pencil, Plus } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import type { MuscleGroup } from "@/features/exercises/contracts";
 import { TrainingExerciseList } from "@/features/training/components/training-exercise-list";
 import { TrainingSummary } from "@/features/training/components/training-summary";
+import { TrainingNotes } from "@/features/training/components/training-notes";
 import { MAX_PLAN_EXERCISES, type Plan } from "../contracts";
 import { PlanEditForm } from "./plan-edit-form";
 import { DeletePlanButton } from "./delete-plan-button";
@@ -57,16 +57,7 @@ export function PlanDetail({
       ) : (
         <>
           <TrainingSummary exercises={plan.exercises} />
-          {plan.description && (
-            <Card>
-              <CardContent>
-                <h2 className="font-heading text-xl">Notes</h2>
-                <p className="whitespace-pre-wrap wrap-break-words text-sm leading-7 text-muted-foreground">
-                  {plan.description}
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          <TrainingNotes description={plan.description} />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-heading text-2xl">Exercices</h2>
             <Button

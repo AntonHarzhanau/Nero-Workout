@@ -10,6 +10,7 @@ type TrainingExerciseEditorProps = {
   entry: TrainingExerciseDraft;
   index: number;
   count: number;
+  maxSets: number;
   onMove: (from: number, to: number) => void;
   onRemove: () => void;
 };
@@ -17,6 +18,7 @@ export function TrainingExerciseEditor({
   entry,
   index,
   count,
+  maxSets,
   onMove,
   onRemove,
 }: TrainingExerciseEditorProps) {
@@ -72,7 +74,11 @@ export function TrainingExerciseEditor({
       <CardContent>
         <input type="hidden" {...register(`exercises.${index}.exerciseId`)} />
         <input type="hidden" {...register(`exercises.${index}.title`)} />
-        <TrainingSetsEditor exerciseIndex={index} title={entry.title} />
+        <TrainingSetsEditor
+          exerciseIndex={index}
+          title={entry.title}
+          maxSets={maxSets}
+        />
       </CardContent>
     </Card>
   );

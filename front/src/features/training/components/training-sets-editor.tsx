@@ -3,15 +3,17 @@ import { useFieldArray, useFormContext } from "react-hook-form";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
-import { MAX_SETS, type TrainingFormValues } from "../contracts";
+import type { TrainingFormValues } from "../contracts";
 import { TrainingSetRow } from "./training-set-row";
 
 export function TrainingSetsEditor({
   exerciseIndex,
   title,
+  maxSets,
 }: {
   exerciseIndex: number;
   title: string;
+  maxSets: number;
 }) {
   const {
     control,
@@ -50,7 +52,7 @@ export function TrainingSetsEditor({
         type="button"
         variant="link"
         size="sm"
-        disabled={isSubmitting || fields.length >= MAX_SETS}
+        disabled={isSubmitting || fields.length >= maxSets}
         onClick={() =>
           append({ ...(getValues(name).at(-1) ?? { weightKg: 0, reps: 10 }) })
         }
