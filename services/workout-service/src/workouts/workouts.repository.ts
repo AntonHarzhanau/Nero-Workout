@@ -1,7 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
-import type { EntityManager } from 'typeorm';
+import {
+  Between,
+  DataSource,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
+import type { EntityManager, FindOptionsWhere } from 'typeorm';
 
 import { WorkoutExercise } from './entities/workout-exercise.entity.js';
 import { Workout } from './entities/workout.entity.js';
@@ -10,6 +16,7 @@ import type {
   WorkoutExerciseValues,
   WorkoutSummary,
   WorkoutValues,
+  WorkoutStatisticsRange,
 } from './workout.types.js';
 
 @Injectable()
@@ -34,6 +41,30 @@ export class WorkoutsRepository {
       },
       where: { ownerId: userId },
       order: { workoutDate: 'DESC', createdAt: 'DESC', id: 'DESC' },
+    });
+  }
+
+  findForStatistics(
+    userId: string,
+    { from, to }: WorkoutStatisticsRange,
+  ): Promise<Workout[]> {
+    const where: FindOptionsWhere<Workout> = { ownerId: userId };
+    if (from && to) {
+      where.workoutDate = Between(from, to);
+    } else if (from) {
+      where.workoutDate = MoreThanOrEqual(from);
+    } else if (to) {
+      where.workoutDate = LessThanOrEqual(to);
+    }
+
+    return this.repository.find({
+      where,
+      relations: { exercises: { sets: true } },
+      order: {
+        workoutDate: 'ASC',
+        id: 'ASC',
+        exercises: { position: 'ASC', sets: { position: 'ASC' } },
+      },
     });
   }
 
@@ -156,7 +187,10 @@ export class WorkoutsRepository {
     return Boolean(result.affected);
   }
 
-  async deleteAllForUser(userId: string, manager: EntityManager): Promise<void> {
+  async deleteAllForUser(
+    userId: string,
+    manager: EntityManager,
+  ): Promise<void> {
     await manager.delete(Workout, { ownerId: userId });
   }
 

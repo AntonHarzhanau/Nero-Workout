@@ -8,6 +8,8 @@ export interface WorkoutSetValues {
 
 export interface WorkoutExerciseValues {
   exerciseId: string;
+  exerciseNameSnapshot: string;
+  muscleGroupsSnapshot: string[];
   sets: WorkoutSetValues[];
 }
 
@@ -48,4 +50,21 @@ export interface WorkoutExerciseView {
 
 export interface WorkoutView extends WorkoutSummary {
   exercises: WorkoutExerciseView[];
+}
+
+export interface WorkoutStatisticsRange {
+  from?: string;
+  to?: string;
+}
+
+export interface WorkoutStatisticsView {
+  id: string;
+  workoutDate: string;
+  durationMinutes: number | null;
+  exercises: {
+    exerciseId: string;
+    exerciseName: string;
+    muscleGroups: string[];
+    sets: { weightKg: string; reps: number }[];
+  }[];
 }

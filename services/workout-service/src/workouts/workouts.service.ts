@@ -51,14 +51,14 @@ export class WorkoutsService {
   }
 
   async create(userId: string, dto: CreateWorkoutDto): Promise<WorkoutView> {
-    await this.exercisesService.assertAvailableToUser(
+    const exercises = await this.exercisesService.getAvailableByIds(
       userId,
       dto.exercises.map((item) => item.exerciseId),
     );
 
     const saved = await this.workoutsRepository.create(
       userId,
-      toWorkoutValues(dto),
+      toWorkoutValues(dto, exercises),
     );
 
     return this.findOne(userId, saved.id);
@@ -71,7 +71,7 @@ export class WorkoutsService {
   ): Promise<WorkoutView> {
     await this.ensureOwned(userId, workoutId);
 
-    await this.exercisesService.assertAvailableToUser(
+    const exercises = await this.exercisesService.getAvailableByIds(
       userId,
       dto.exercises.map((item) => item.exerciseId),
     );
@@ -79,7 +79,7 @@ export class WorkoutsService {
     await this.workoutsRepository.replaceOwned(
       userId,
       workoutId,
-      toWorkoutValues(dto),
+      toWorkoutValues(dto, exercises),
     );
 
     return this.findOne(userId, workoutId);
@@ -99,7 +99,7 @@ export class WorkoutsService {
     const saved = await this.workoutsRepository.appendExercise(
       userId,
       workoutId,
-      toWorkoutExerciseValues(dto),
+      toWorkoutExerciseValues(dto, exercise),
     );
 
     return toWorkoutExerciseView(saved, exercise);
