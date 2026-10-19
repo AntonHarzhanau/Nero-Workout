@@ -5,9 +5,7 @@ import { authApi } from "../auth-api";
 import { clearSession, readSession } from "../session";
 import type { ActionError } from "../types";
 
-export async function logoutAction(
-  _previousState: ActionError | null,
-): Promise<ActionError> {
+export async function logoutAction(): Promise<ActionError> {
   const { refreshToken } = await readSession();
 
   if (refreshToken) {

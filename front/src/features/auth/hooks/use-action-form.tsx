@@ -23,7 +23,7 @@ export function useActionForm<T extends FieldValues>({
 
     try {
       result = await action(values);
-    } catch (error) {
+    } catch {
       form.setError("root", {
         message: "Impossible d'envoyer le formulaire. Réessayez",
       });

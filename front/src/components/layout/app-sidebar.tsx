@@ -16,7 +16,6 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { LogoutButton } from "@/features/auth/components/logout-button";
 import type { User } from "@/features/auth/contracts";
 import { Brand } from "./brand";
 import { UserAvatar } from "./user-avatar";
