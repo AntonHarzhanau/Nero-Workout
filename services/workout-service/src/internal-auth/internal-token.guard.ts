@@ -21,7 +21,7 @@ export class InternalTokenGuard implements CanActivate {
       throw new Error(`Internal API token must not be empty.`);
     }
 
-    this.expectedToken = Buffer.from(token, 'utf-8');
+    this.expectedToken = Buffer.from(token);
   }
 
   canActivate(context: ExecutionContext): boolean {
@@ -32,7 +32,7 @@ export class InternalTokenGuard implements CanActivate {
       throw new UnauthorizedException('Internal token is required.');
     }
 
-    const receivedToken = Buffer.from(token, 'utf-8');
+    const receivedToken = Buffer.from(token);
 
     if (
       receivedToken.length !== this.expectedToken.length ||
