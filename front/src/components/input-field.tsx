@@ -3,6 +3,9 @@
 import { Eye, EyeOff } from "lucide-react";
 import { useId, useState, type ComponentProps } from "react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 
 type InputFieldProps = ComponentProps<"input"> & {
   name: string;
@@ -38,13 +41,11 @@ export function InputField({
     undefined;
 
   return (
-    <div className="space-y-2">
-      <label htmlFor={inputId} className="block text-sm font-medium">
-        {label}
-      </label>
+    <Field data-invalid={Boolean(error)} className="gap-2">
+      <FieldLabel htmlFor={inputId}>{label}</FieldLabel>
 
       <div className="relative">
-        <input
+        <Input
           {...inputProps}
           id={inputId}
           name={name}
@@ -52,19 +53,14 @@ export function InputField({
           disabled={disabled}
           aria-invalid={error ? true : ariaInvalid}
           aria-describedby={describedBy}
-          className={cn(
-            "h-10 w-full rounded-md border border-input bg-background px-3",
-            "outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            "aria-invalid:border-destructive",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-            isPassword && "pr-12",
-            className,
-          )}
+          className={cn("h-10 bg-background", isPassword && "pr-12", className)}
         />
 
         {isPassword && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             disabled={disabled}
             onClick={() => setIsPasswordVisible((visible) => !visible)}
             aria-label={
@@ -73,18 +69,14 @@ export function InputField({
                 : "Afficher le mot de passe"
             }
             aria-controls={inputId}
-            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            className="absolute inset-y-0 right-0 h-full w-11 text-muted-foreground"
           >
             <VisibilityIcon className="size-4" aria-hidden="true" />
-          </button>
+          </Button>
         )}
       </div>
 
-      {error && (
-        <p id={errorId} className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
-    </div>
+      {error && <FieldError id={errorId}>{error}</FieldError>}
+    </Field>
   );
 }

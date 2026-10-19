@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginAction } from "../actions/login";
-import { useActionForm } from "../hooks/use-action-form";
+import { useActionForm } from "@/hooks/use-action-form";
 import { LoginInput, loginSchema } from "../schemas";
 import { InputField } from "@/components/input-field";
 import { Button } from "@/components/ui/button";

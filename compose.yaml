@@ -1,7 +1,8 @@
 services:
-
   postgres:
     image: postgres:17
+
+    restart: "unless-stopped"
 
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
@@ -20,6 +21,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+
+    networks:
+      - database
 
     healthcheck:
       test:
@@ -49,8 +53,8 @@ services:
 
     environment:
       DATABASE_URL: "postgresql://${ACCOUNT_DB_USER:?ACCOUNT_DB_USER is required}:${ACCOUNT_DB_PASSWORD:?ACCOUNT_DB_PASSWORD is required}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB is required}?serverVersion=17&charset=utf8"
-      APP_SECRET: ${ACCOUNT_APP_SECRET}
-      DEFAULT_URI: http://localhost:${ACCOUNT_PORT:-8081}
+      APP_SECRET: ${ACCOUNT_APP_SECRET:?ACCOUNT_APP_SECRET is required}
+      DEFAULT_URI: http://account-service:8080
 
     command:
       - php
@@ -59,6 +63,9 @@ services:
       - --no-interaction
 
     restart: "no"
+
+    networks:
+      - database
 
     depends_on:
       postgres:
@@ -69,10 +76,12 @@ services:
       context: ./services/account-service
       target: runtime
 
+    restart: "unless-stopped"
+
     environment:
       DATABASE_URL: "postgresql://${ACCOUNT_DB_USER:?ACCOUNT_DB_USER is required}:${ACCOUNT_DB_PASSWORD:?ACCOUNT_DB_PASSWORD is required}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB is required}?serverVersion=17&charset=utf8"
-      APP_SECRET: ${ACCOUNT_APP_SECRET}
-      DEFAULT_URI: http://localhost:${ACCOUNT_PORT:-8081}
+      APP_SECRET: ${ACCOUNT_APP_SECRET:?ACCOUNT_APP_SECRET is required}
+      DEFAULT_URI: http://account-service:8080
 
       JWT_SECRET_KEY: /run/nero/private/jwt_private.pem
       JWT_PUBLIC_KEY: /run/nero/public/jwt_public.pem
@@ -81,13 +90,25 @@ services:
       INTERNAL_API_TOKEN_FILE: /run/nero/internal/internal_api_token
       WORKOUT_SERVICE_URL: http://workout-service:3001
 
-    ports:
-      - "127.0.0.1:${ACCOUNT_PORT:-8081}:8080"
-
     volumes:
       - jwt_private:/run/nero/private:ro
       - jwt_public:/run/nero/public:ro
       - internal_token:/run/nero/internal:ro
+
+    networks:
+      - backend
+      - database
+
+    healthcheck:
+      test:
+        - CMD
+        - php
+        - -r
+        - 'exit(@file_get_contents("http://127.0.0.1:8080/health") === false ? 1 : 0);'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
     depends_on:
       postgres:
@@ -101,6 +122,8 @@ services:
     build:
       context: ./services/workout-service
       target: runtime
+
+    restart: "no"
 
     environment:
       DB_HOST: postgres
@@ -116,7 +139,8 @@ services:
       - -d
       - dist/database/data-source.js
 
-    restart: "no"
+    networks:
+      - database
 
     depends_on:
       postgres:
@@ -127,6 +151,8 @@ services:
       context: ./services/workout-service
       target: runtime
 
+    restart: "unless-stopped"
+
     environment:
       NODE_ENV: production
       PORT: "3001"
@@ -136,16 +162,28 @@ services:
       DB_NAME: ${POSTGRES_DB:?POSTGRES_DB is required}
       DB_USER: ${WORKOUT_DB_USER:?WORKOUT_DB_USER is required}
       DB_PASSWORD: ${WORKOUT_DB_PASSWORD:?WORKOUT_DB_PASSWORD is required}
+
       INTERNAL_API_TOKEN_FILE: /run/nero/internal/internal_api_token
-
       JWT_PUBLIC_KEY: /run/nero/public/jwt_public.pem
-
-    ports:
-      - "127.0.0.1:${WORKOUT_PORT:-3001}:3001"
 
     volumes:
       - jwt_public:/run/nero/public:ro
       - internal_token:/run/nero/internal:ro
+
+    networks:
+      - backend
+      - database
+
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
     depends_on:
       postgres:
@@ -154,6 +192,57 @@ services:
         condition: service_completed_successfully
       workout-migration:
         condition: service_completed_successfully
+
+  front:
+    build:
+      context: ./front
+      target: runtime
+
+    restart: "unless-stopped"
+
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+
+      ACCOUNT_API_URL: http://account-service:8080
+      WORKOUT_API_URL: http://workout-service:3001
+
+    ports:
+      - "${FRONT_PORT:-3000}:3000"
+
+    networks:
+      - public
+      - backend
+
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/login').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+    depends_on:
+      account-service:
+        condition: service_healthy
+      workout-service:
+        condition: service_healthy
+
+networks:
+  public:
+    driver: bridge
+
+  backend:
+    driver: bridge
+    internal: true
+
+  database:
+    driver: bridge
+    internal: true
 
 volumes:
   postgres_data:

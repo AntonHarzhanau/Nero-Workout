@@ -1,7 +1,12 @@
 "use client";
 
-import { FieldPath, FieldValues, useForm, UseFormProps } from "react-hook-form";
-import { ActionError } from "../types";
+import {
+  useForm,
+  type FieldPath,
+  type FieldValues,
+  type UseFormProps,
+} from "react-hook-form";
+import type { ActionError } from "@/lib/http/api-client";
 
 type ActionFormOptions<T extends FieldValues> = {
   formOptions: UseFormProps<T>;
@@ -23,7 +28,7 @@ export function useActionForm<T extends FieldValues>({
 
     try {
       result = await action(values);
-    } catch (error) {
+    } catch {
       form.setError("root", {
         message: "Impossible d'envoyer le formulaire. Réessayez",
       });
