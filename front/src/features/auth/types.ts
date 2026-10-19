@@ -1,3 +1,1 @@
-import type { ApiError } from "@/lib/http/api-client";
-
-export type ActionError = Pick<ApiError, "message" | "fieldErrors">;
+export type { ActionError } from "@/lib/http/api-client";

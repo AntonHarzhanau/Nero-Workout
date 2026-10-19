@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { InputField } from "@/components/input-field";
 import { Button } from "@/components/ui/button";
 import { registerAction } from "../actions/register";
-import { useActionForm } from "../hooks/use-action-form";
+import { useActionForm } from "@/hooks/use-action-form";
 import { registerSchema, type RegisterInput } from "../schemas";
 
 type RegisterFormProps = {

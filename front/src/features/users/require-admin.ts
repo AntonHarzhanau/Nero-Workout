@@ -1,20 +1,12 @@
 import "server-only";
-import { requireCurrentUser } from "../auth/get-current-user";
-import { notFound, redirect } from "next/navigation";
-import { readSession } from "../auth/session";
-import { getLoginUrl } from "../auth/return-to";
+import { notFound } from "next/navigation";
+import { requireSession } from "../auth/require-session";
 
 export async function requireAdmin() {
-  const user = await requireCurrentUser();
+  const { user, accessToken } = await requireSession("/users");
 
   if (user.role !== "admin") {
     notFound();
-  }
-
-  const { accessToken } = await readSession();
-
-  if (!accessToken) {
-    redirect(getLoginUrl("/users"));
   }
 
   return { user, accessToken };
