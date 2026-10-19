@@ -14,9 +14,10 @@ export type ApiResult<T> =
   | { ok: false; error: ApiError };
 
 type RequestOptions = {
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   token?: string;
+  timeoutMs?: number;
 };
 
 const errorSchema = z.object({
@@ -66,7 +67,7 @@ export function createApiClient(getBaseUrl: () => string | undefined) {
         body:
           options.body === undefined ? undefined : JSON.stringify(options.body),
         cache: "no-store",
-        signal: AbortSignal.timeout(5_000),
+        signal: AbortSignal.timeout(options.timeoutMs ?? 5_000),
       });
     } catch {
       return {
