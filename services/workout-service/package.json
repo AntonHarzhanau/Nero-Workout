@@ -20,6 +20,7 @@
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "test:mutation": "stryker run",
+    "test:mutation:statistics": "stryker run stryker.statistics.config.mjs",
     "typeorm": "node --env-file=.env --loader ts-node/esm ./node_modules/typeorm/cli.js",
     "migration:generate": "npm run typeorm -- migration:generate -d src/database/data-source.ts src/database/migrations/Migration",
     "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
