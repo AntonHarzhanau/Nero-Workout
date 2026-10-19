@@ -20,6 +20,8 @@ type DeleteConfirmationDialogProps = {
   title: string;
   description: ReactNode;
   pending: boolean;
+  confirmLabel?: string;
+  pendingLabel?: string;
   error?: string;
   action: (formData: FormData) => void | Promise<void>;
 };
@@ -33,6 +35,8 @@ export function DeleteConfirmationDialog({
   pending,
   error,
   action,
+  confirmLabel = "Supprimer définitivement",
+  pendingLabel = "Suppression…",
 }: DeleteConfirmationDialogProps) {
   return (
     <AlertDialog
@@ -58,7 +62,7 @@ export function DeleteConfirmationDialog({
               Annuler
             </AlertDialogCancel>
             <Button type="submit" variant="destructive" disabled={pending}>
-              {pending ? "Suppression…" : "Supprimer définitivement"}
+              {pending ? pendingLabel : confirmLabel}
             </Button>
           </AlertDialogFooter>
         </form>

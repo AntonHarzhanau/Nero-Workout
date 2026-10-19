@@ -27,7 +27,14 @@ export function ExerciseForm({
   const { isSubmitting, errors } = form.formState;
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.onSubmit} noValidate aria-busy={isSubmitting}>
+      <form
+        onSubmit={(event) => {
+          event.stopPropagation();
+          void form.onSubmit(event);
+        }}
+        noValidate
+        aria-busy={isSubmitting}
+      >
         <fieldset disabled={isSubmitting} className="space-y-6">
           <FieldGroup className="gap-5">
             <ExerciseFormFields groups={groups} isAdmin={isAdmin} />

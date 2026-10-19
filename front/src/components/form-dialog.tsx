@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,7 @@ type FormDialogProps = {
   pending: boolean;
   onClose: () => void;
   children: ReactNode;
+  className?: string;
 };
 
 export function FormDialog({
@@ -23,6 +25,7 @@ export function FormDialog({
   pending,
   onClose,
   children,
+  className,
 }: FormDialogProps) {
   return (
     <Dialog
@@ -35,7 +38,7 @@ export function FormDialog({
       <DialogContent
         showCloseButton={!pending}
         aria-busy={pending}
-        className="max-h-[90dvh] overflow-y-auto sm:max-w-xl"
+        className={cn("max-h-[90dvh] overflow-y-auto sm:max-w-xl", className)}
       >
         <DialogHeader>
           <DialogTitle className="font-heading text-3xl font-normal">
