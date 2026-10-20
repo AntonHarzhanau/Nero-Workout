@@ -1,0 +1,34 @@
+[project]
+name = "statistics-service"
+version = "0.1.0"
+description = "Workout statistics computed from workout-service data"
+readme = "README.md"
+authors = [
+    { name = "Dzidoula Godwin KPOGLO", email = "kpoglo.godwin10@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard]>=0.156.1",
+    "pydantic-settings>=2.16.1",
+    "pyjwt[crypto]>=2.15.1",
+    "redis>=8.1.0",
+    "tzdata>=2026.5",
+]
+
+[tool.fastapi]
+entrypoint = "statistics_service.main:app"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+
+[build-system]
+requires = ["uv_build>=0.13.4,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "fakeredis>=2.40.0",
+    "pytest>=9.1.1",
+    "respx>=0.23.1",
+]
