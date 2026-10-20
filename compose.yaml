@@ -215,6 +215,8 @@ services:
       NODE_ENV: production
       PORT: "3000"
       HOSTNAME: 0.0.0.0
+      AUTH_COOKIE_PREFIX: ${AUTH_COOKIE_PREFIX:-production}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-true}
 
       ACCOUNT_API_URL: http://account-service:8080
       WORKOUT_API_URL: http://workout-service:3001

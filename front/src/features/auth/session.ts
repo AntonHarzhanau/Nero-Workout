@@ -3,14 +3,16 @@ import "server-only";
 import { cookies } from "next/headers";
 import type { TokenPair } from "./contracts";
 
-const ACCESS_COOKIE = "access_token";
-const REFRESH_COOKIE = "refresh_token";
+const COOKIE_PREFIX = process.env.AUTH_COOKIE_PREFIX ?? "nero";
+
+const ACCESS_COOKIE = `${COOKIE_PREFIX}_access_token`;
+const REFRESH_COOKIE = `${COOKIE_PREFIX}_refresh_token`;
 
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  secure: process.env.AUTH_COOKIE_SECURE !== "false",
   sameSite: "lax" as const,
   path: "/",
 };
