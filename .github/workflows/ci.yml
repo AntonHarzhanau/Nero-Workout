@@ -1,0 +1,27 @@
+name: Unit tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  front:
+    name: Frontend
+    uses: ./.github/workflows/node-tests.yml
+    with:
+      working-directory: front
+
+  workout:
+    name: Workout
+    uses: ./.github/workflows/node-tests.yml
+    with:
+      working-directory: services/workout-service
+
+  account:
+    name: Account
+    uses: ./.github/workflows/php-tests.yml
+    with:
+      working-directory: services/account-service
