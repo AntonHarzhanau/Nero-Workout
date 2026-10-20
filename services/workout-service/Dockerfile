@@ -3,7 +3,8 @@ FROM node:24-bookworm-slim AS build
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --no-audit --no-fund
 
 COPY tsconfig.json tsconfig.build.json nest-cli.json ./
 COPY src ./src
@@ -17,7 +18,8 @@ FROM node:24-bookworm-slim AS dependencies
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN  --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev --no-audit --no-fund
 
 FROM node:24-bookworm-slim AS runtime
 

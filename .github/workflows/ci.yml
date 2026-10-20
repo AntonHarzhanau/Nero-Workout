@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+  release:
+    types:
+      - published
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    name: Detect changes
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/changes.yml
+
+  front:
+    name: Frontend
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.services), 'front')
+    uses: ./.github/workflows/node-tests.yml
+    with:
+      working-directory: front
+
+  workout:
+    name: Workout
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.services), 'workout')
+    uses: ./.github/workflows/node-tests.yml
+    with:
+      working-directory: services/workout-service
+
+  account:
+    name: Account
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.services), 'account')
+    uses: ./.github/workflows/php-tests.yml
+    with:
+      working-directory: services/account-service
+
+  images:
+    name: Docker / ${{ matrix.service }}
+    needs: [changes, front, workout, account]
+
+    if: >-
+      ${{!cancelled() && needs.changes.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && needs.changes.outputs.services != '[]' }}
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        service: ${{fromJSON(needs.changes.outputs.services) }}
+
+    uses: ./.github/workflows/docker-image.yml
+    with:
+      image-name: ${{ matrix.service }}
+      context: >-
+        ${{ matrix.service == 'front' && 'front' ||
+            matrix.service == 'init-secrets' && 'infra/secrets' ||
+            matrix.service == 'postgres' && 'infra/postgres' ||
+            format('services/{0}-service', matrix.service) }}
+      target: ${{ matrix.service != 'init-secrets' && matrix.service != 'postgres' && 'runtime' || '' }}
+
+  result:
+    name: CI Result
+    if: ${{ !cancelled() }}
+    needs: [changes, front, workout, account, images]
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check results
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTS" | jq -e '
+            .changes.result == "success" and
+            all(.[]; .result == "success" or .result == "skipped")
+          '
