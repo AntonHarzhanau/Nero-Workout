@@ -66,7 +66,12 @@ jobs:
     uses: ./.github/workflows/docker-image.yml
     with:
       image-name: ${{ matrix.service }}
-      context: ${{ matrix.service == 'front' && 'front' || format('services/{0}-service', matrix.service) }}
+      context: >-
+        ${{ matrix.service == 'front' && 'front' ||
+            matrix.service == 'init-secrets' && 'infra/secrets' ||
+            matrix.service == 'postgres' && 'infra/postgres' ||
+            format('services/{0}-service', matrix.service) }}
+      target: ${{ matrix.service != 'init-secrets' && matrix.service != 'postgres' && 'runtime' || '' }}
 
   result:
     name: CI Result
