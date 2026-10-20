@@ -5,6 +5,8 @@ services:
 
     restart: "unless-stopped"
 
+    restart: "unless-stopped"
+
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
@@ -21,6 +23,9 @@ services:
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - database
 
     networks:
       - database
