@@ -1,6 +1,7 @@
 services:
   postgres:
-    image: postgres:17
+    image: nero-postgres-v1
+    build: ./infra/postgres
 
     restart: "unless-stopped"
 
@@ -20,7 +21,6 @@ services:
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
 
     networks:
       - database

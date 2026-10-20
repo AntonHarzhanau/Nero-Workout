@@ -14,3 +14,10 @@ yarn-debug.log*
 yarn-error.log*
 
 .DS_Store
+
+e2e
+src/test
+playwright.config.ts
+vitest.config.mts
+playwright-report
+test-results
