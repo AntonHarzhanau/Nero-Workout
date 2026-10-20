@@ -52,7 +52,13 @@ services:
       target: runtime
 
     environment:
-      DATABASE_URL: "postgresql://${ACCOUNT_DB_USER:?ACCOUNT_DB_USER is required}:${ACCOUNT_DB_PASSWORD:?ACCOUNT_DB_PASSWORD is required}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB is required}?serverVersion=17&charset=utf8"
+      # DATABASE_URL: "postgresql://${ACCOUNT_DB_USER:?ACCOUNT_DB_USER is required}:${ACCOUNT_DB_PASSWORD:?ACCOUNT_DB_PASSWORD is required}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB is required}?serverVersion=17&charset=utf8"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB:?POSTGRES_DB is required}
+      DB_USER: ${ACCOUNT_DB_USER:?ACCOUNT_DB_USER is required}
+      DB_PASSWORD: ${ACCOUNT_DB_PASSWORD:?ACCOUNT_DB_PASSWORD is required}
+
       APP_SECRET: ${ACCOUNT_APP_SECRET:?ACCOUNT_APP_SECRET is required}
       DEFAULT_URI: http://account-service:8080
 
@@ -79,7 +85,12 @@ services:
     restart: "unless-stopped"
 
     environment:
-      DATABASE_URL: "postgresql://${ACCOUNT_DB_USER:?ACCOUNT_DB_USER is required}:${ACCOUNT_DB_PASSWORD:?ACCOUNT_DB_PASSWORD is required}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB is required}?serverVersion=17&charset=utf8"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB:?POSTGRES_DB is required}
+      DB_USER: ${ACCOUNT_DB_USER:?ACCOUNT_DB_USER is required}
+      DB_PASSWORD: ${ACCOUNT_DB_PASSWORD:?ACCOUNT_DB_PASSWORD is required}
+
       APP_SECRET: ${ACCOUNT_APP_SECRET:?ACCOUNT_APP_SECRET is required}
       DEFAULT_URI: http://account-service:8080
 

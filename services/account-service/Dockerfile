@@ -28,9 +28,13 @@ ENV APP_ENV=prod \
 COPY --from=dependencies /app ./
 
 RUN echo "APP_ENV=prod" > .env \
-    && DATABASE_URL="postgresql://build:build@localhost:5432/build?serverVersion=17&charset=utf8" \
-       DEFAULT_URI="http://localhost" \
-       php bin/console cache:warmup
+    &&  DB_HOST=127.0.0.1 \
+        DB_PORT=5432 \
+        DB_NAME=build \
+        DB_USER=build \
+        DB_PASSWORD=build \
+        DEFAULT_URI=http://localhost \
+        php bin/console cache:warmup
 
 RUN useradd --system --no-create-home --shell /usr/sbin/nologin app \
     && setcap -r /usr/local/bin/frankenphp \
