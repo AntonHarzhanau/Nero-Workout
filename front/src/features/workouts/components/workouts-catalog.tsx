@@ -20,13 +20,15 @@ export function WorkoutsCatalog({
   plans,
   groups,
   isAdmin,
+  initialCreating = false,
 }: {
   workouts: WorkoutSummary[];
   plans: PlanSummary[];
   groups: MuscleGroup[];
   isAdmin: boolean;
+  initialCreating?: boolean;
 }) {
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(initialCreating);
   const [search, setSearch] = useState("");
   const [month, setMonth] = useState("all");
   const router = useRouter();
@@ -104,7 +106,10 @@ export function WorkoutsCatalog({
           groups={groups}
           plans={plans}
           isAdmin={isAdmin}
-          onClose={() => setCreating(false)}
+          onClose={() => {
+            setCreating(false);
+            if (initialCreating) router.replace("/workouts", { scroll: false });
+          }}
           onSaved={(workout) => {
             setCreating(false);
             router.push(`/workouts/${workout.id}`);
