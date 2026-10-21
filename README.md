@@ -18,8 +18,6 @@ cp .env.example .env
 cp services/account-service/.env.example services/account-service/.env
 ```
 
-Si le port 5432 est déjà pris sur ta machine (Postgres local, plage réservée par Windows), change `POSTGRES_PORT` dans `.env` (par exemple `5433`).
-
 ### 2. Secrets
 
 #### Clés JWT
