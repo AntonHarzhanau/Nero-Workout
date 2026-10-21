@@ -18,6 +18,8 @@ function invalidId(): ApiError {
 }
 function revalidateWorkout(id?: string) {
   revalidatePath("/workouts");
+  revalidatePath("/dashboard");
+  revalidatePath("/progress");
   if (id) revalidatePath(`/workouts/${id}`);
 }
 

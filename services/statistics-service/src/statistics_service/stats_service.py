@@ -12,6 +12,7 @@ from . import calculations
 from .cache import CacheEntry, StatsCache
 from .models import Workout
 from .workout_client import WorkoutClient, parse_workouts
+from .report import compute_report
 
 
 class StatisticsService:
@@ -27,6 +28,12 @@ class StatisticsService:
             start,
             end,
             lambda workouts: calculations.compute_overview(workouts, month_start, today),
+        )
+
+    async def report(self, user_id: UUID, start: date | None, end: date) -> dict[str, Any]:
+        return await self._compute(
+            user_id, f"report:v1:{start}:{end}", None, end,
+            lambda workouts: compute_report(workouts, start, end),
         )
 
     async def strength_curve(

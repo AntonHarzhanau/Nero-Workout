@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query, Request, status
 from .auth import CurrentUser
 from .config import Settings, get_settings
 from .errors import ApiError
-from .models import OverviewResponse, ProgressionResponse, StrengthCurveResponse
+from .models import OverviewResponse, ProgressionResponse, StrengthCurveResponse, ReportResponse
 from .stats_service import StatisticsService
 
 router = APIRouter()
@@ -69,3 +69,12 @@ async def strength_curve(
 async def progression(user: CurrentUser, service: Service, start: From = None, end: To = None) -> Any:
     ensure_valid_range(start, end)
     return await service.progression(user.id, start, end)
+
+
+@router.get("/stats/report", response_model=ReportResponse, tags=["stats"])
+async def report(user: CurrentUser, service: Service, today: Today, start: From = None, end: To = None) -> Any:
+    effective_end = min(end or today, today)
+    ensure_valid_range(start, effective_end)
+    if start is not None and (effective_end - start).days > 36600:
+        raise ApiError(422, "validation_failed", "The date range must not exceed 100 years.")
+    return await service.report(user.id, start, effective_end)

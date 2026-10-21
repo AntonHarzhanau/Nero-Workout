@@ -9,7 +9,7 @@ const { privateKey, publicKey } = generateKeyPairSync('rsa', {
   modulusLength: 2048,
 });
 
-export const testPublicKey = publicKey.export({ type: 'spki', format: 'pem' });
+const testPublicKey = publicKey.export({ type: 'spki', format: 'pem' });
 
 const options = {
   publicKey: testPublicKey,

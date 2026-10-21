@@ -19,6 +19,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 
 
+FROM build AS test
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-editable
+COPY tests ./tests
+CMD ["uv", "run", "--no-sync", "pytest", "-q"]
+
 FROM python:3.13-slim AS runtime
 
 ENV PATH="/app/.venv/bin:$PATH" \

@@ -126,3 +126,26 @@ class ProgressionResponse(CamelModel):
     exercises: list[ExerciseProgress]
     muscle_groups: list[MuscleGroupVolume]
     records: list[PersonalRecord]
+
+
+class ActivityPoint(CamelModel):
+    date: date
+    workouts: int
+    sets: int
+    reps: int
+    volume_kg: float
+    duration_minutes: int
+
+
+class ExerciseOption(CamelModel):
+    exercise_id: UUID
+    exercise_name: str
+
+
+class ReportResponse(ProgressionResponse):
+    start: date = Field(alias="from")
+    end: date = Field(alias="to")
+    previous_summary: ProgressionSummary | None
+    days: list[ActivityPoint]
+    weeks: list[ActivityPoint]
+    exercise_options: list[ExerciseOption]

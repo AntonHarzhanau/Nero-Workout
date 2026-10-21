@@ -1,10 +1,23 @@
+x-account-db: &account-db
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_NAME: ${POSTGRES_DB:?POSTGRES_DB is required}
+  DB_USER: ${ACCOUNT_DB_USER:?ACCOUNT_DB_USER is required}
+  DB_PASSWORD: ${ACCOUNT_DB_PASSWORD:?ACCOUNT_DB_PASSWORD is required}
+
+x-workout-db: &workout-db
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_NAME: ${POSTGRES_DB:?POSTGRES_DB is required}
+  DB_USER: ${WORKOUT_DB_USER:?WORKOUT_DB_USER is required}
+  DB_PASSWORD: ${WORKOUT_DB_PASSWORD:?WORKOUT_DB_PASSWORD is required}
+
 services:
   postgres:
     image: nero-postgres-v1
     build: ./infra/postgres
 
     restart: "unless-stopped"
-
 
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
@@ -16,9 +29,6 @@ services:
 
       WORKOUT_DB_USER: ${WORKOUT_DB_USER:?WORKOUT_DB_USER is required}
       WORKOUT_DB_PASSWORD: ${WORKOUT_DB_PASSWORD:?WORKOUT_DB_PASSWORD is required}
-
-      STATISTICS_DB_USER: ${STATISTICS_DB_USER:?STATISTICS_DB_USER is required}
-      STATISTICS_DB_PASSWORD: ${STATISTICS_DB_PASSWORD:?STATISTICS_DB_PASSWORD is required}
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -53,12 +63,7 @@ services:
       target: runtime
 
     environment:
-      # DATABASE_URL: "postgresql://${ACCOUNT_DB_USER:?ACCOUNT_DB_USER is required}:${ACCOUNT_DB_PASSWORD:?ACCOUNT_DB_PASSWORD is required}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB is required}?serverVersion=17&charset=utf8"
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: ${POSTGRES_DB:?POSTGRES_DB is required}
-      DB_USER: ${ACCOUNT_DB_USER:?ACCOUNT_DB_USER is required}
-      DB_PASSWORD: ${ACCOUNT_DB_PASSWORD:?ACCOUNT_DB_PASSWORD is required}
+      <<: *account-db
 
       APP_SECRET: ${ACCOUNT_APP_SECRET:?ACCOUNT_APP_SECRET is required}
       DEFAULT_URI: http://account-service:8080
@@ -86,11 +91,7 @@ services:
     restart: "unless-stopped"
 
     environment:
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: ${POSTGRES_DB:?POSTGRES_DB is required}
-      DB_USER: ${ACCOUNT_DB_USER:?ACCOUNT_DB_USER is required}
-      DB_PASSWORD: ${ACCOUNT_DB_PASSWORD:?ACCOUNT_DB_PASSWORD is required}
+      <<: *account-db
 
       APP_SECRET: ${ACCOUNT_APP_SECRET:?ACCOUNT_APP_SECRET is required}
       DEFAULT_URI: http://account-service:8080
@@ -138,11 +139,7 @@ services:
     restart: "no"
 
     environment:
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: ${POSTGRES_DB:?POSTGRES_DB is required}
-      DB_USER: ${WORKOUT_DB_USER:?WORKOUT_DB_USER is required}
-      DB_PASSWORD: ${WORKOUT_DB_PASSWORD:?WORKOUT_DB_PASSWORD is required}
+      <<: *workout-db
 
     command:
       - node
@@ -169,11 +166,7 @@ services:
       NODE_ENV: production
       PORT: "3001"
 
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: ${POSTGRES_DB:?POSTGRES_DB is required}
-      DB_USER: ${WORKOUT_DB_USER:?WORKOUT_DB_USER is required}
-      DB_PASSWORD: ${WORKOUT_DB_PASSWORD:?WORKOUT_DB_PASSWORD is required}
+      <<: *workout-db
 
       INTERNAL_API_TOKEN_FILE: /run/nero/internal/internal_api_token
       JWT_PUBLIC_KEY: /run/nero/public/jwt_public.pem
@@ -217,12 +210,7 @@ services:
       - sh
       - -c
       - >-
-        exec redis-server
-        --requirepass "$$REDIS_PASSWORD"
-        --maxmemory 64mb
-        --maxmemory-policy allkeys-lru
-        --save ""
-        --appendonly no
+        exec redis-server --requirepass "$$REDIS_PASSWORD" --maxmemory 64mb --maxmemory-policy allkeys-lru --save "" --appendonly no
 
     networks:
       - cache

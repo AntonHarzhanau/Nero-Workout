@@ -1,4 +1,4 @@
-export interface PaginationMeta {
+interface PaginationMeta {
   page: number;
   limit: number;
   total: number;

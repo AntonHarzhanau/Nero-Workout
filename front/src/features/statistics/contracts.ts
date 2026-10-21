@@ -1,30 +1,6 @@
 import { z } from "zod";
 
 const dateSchema = z.iso.date();
-const percentChangeSchema = z.number().nullable();
-
-export const overviewSchema = z.object({
-  month: z.object({
-    month: z.string(),
-    workouts: z.number().int(),
-    activeDays: z.number().int(),
-    durationMinutes: z.number().int(),
-    volumeKg: z.number(),
-    sets: z.number().int(),
-    reps: z.number().int(),
-    vsPreviousMonth: z.object({
-      workouts: percentChangeSchema,
-      volumeKg: percentChangeSchema,
-    }),
-  }),
-  currentWeek: z.array(
-    z.object({
-      date: dateSchema,
-      trained: z.boolean(),
-      volumeKg: z.number(),
-    }),
-  ),
-});
 
 export const strengthCurveSchema = z.object({
   exerciseId: z.uuid(),
@@ -38,17 +14,19 @@ export const strengthCurveSchema = z.object({
   ),
 });
 
-export const progressionSchema = z.object({
-  summary: z.object({
-    workouts: z.number().int(),
-    durationMinutes: z.number().int(),
-    volumeKg: z.number(),
-    sets: z.number().int(),
-    reps: z.number().int(),
-    averageDurationMinutes: z.number().nullable(),
-    averageWorkoutsPerWeek: z.number(),
-    firstWorkoutDate: dateSchema.nullable(),
-  }),
+const summarySchema = z.object({
+  workouts: z.number().int(),
+  durationMinutes: z.number().int(),
+  volumeKg: z.number(),
+  sets: z.number().int(),
+  reps: z.number().int(),
+  averageDurationMinutes: z.number().nullable(),
+  averageWorkoutsPerWeek: z.number(),
+  firstWorkoutDate: dateSchema.nullable(),
+});
+
+const progressionSchema = z.object({
+  summary: summarySchema,
   exercises: z.array(
     z.object({
       exerciseId: z.uuid(),
@@ -79,11 +57,29 @@ export const progressionSchema = z.object({
   ),
 });
 
-export type Overview = z.infer<typeof overviewSchema>;
 export type StrengthCurve = z.infer<typeof strengthCurveSchema>;
-export type Progression = z.infer<typeof progressionSchema>;
 
 export type DateRange = {
   from?: string;
   to?: string;
 };
+
+const activityPointSchema = z.object({
+  date: dateSchema,
+  workouts: z.number().int(),
+  sets: z.number().int(),
+  reps: z.number().int(),
+  volumeKg: z.number(),
+  durationMinutes: z.number().int(),
+});
+export const reportSchema = progressionSchema.extend({
+  from: dateSchema,
+  to: dateSchema,
+  previousSummary: summarySchema.nullable(),
+  days: z.array(activityPointSchema),
+  weeks: z.array(activityPointSchema),
+  exerciseOptions: z.array(
+    z.object({ exerciseId: z.uuid(), exerciseName: z.string() }),
+  ),
+});
+export type Report = z.infer<typeof reportSchema>;

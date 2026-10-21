@@ -13,7 +13,7 @@ export interface SaveExerciseInput extends ExerciseValues {
   ownerId: string;
 }
 
-export interface MuscleGroupView {
+interface MuscleGroupView {
   id: string;
   code: string;
   name: string;
