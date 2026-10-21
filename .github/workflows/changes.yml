@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     outputs:
-      services: ${{ github.ref_type == 'tag' && '["front", "workout", "account", "init-secrets", "postgres"]' || steps.filter.outputs.changes }}
+      services: ${{ github.ref_type == 'tag' && '["front", "workout", "account", "statistics", "init-secrets", "postgres"]' || steps.filter.outputs.changes }}
 
     steps:
       - name: Checkout
@@ -45,6 +45,10 @@ jobs:
 
             account:
                 - 'services/account-service/**'
+                - '.github/workflows/**'
+
+            statistics:
+                - 'services/statistics-service/**'
                 - '.github/workflows/**'
 
             init-secrets:
