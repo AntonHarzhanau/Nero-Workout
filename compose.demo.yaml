@@ -1,0 +1,28 @@
+services:
+  demo-fixture:
+    build:
+      context: ./services/statistics-service
+      target: runtime
+
+    command: [python, /fixtures/seed_demo.py]
+    restart: "no"
+    read_only: true
+
+    environment:
+      ACCOUNT_API_URL: http://account-service:8080
+      WORKOUT_API_URL: http://workout-service:3001
+      DEMO_EMAIL: ${DEMO_EMAIL:-demo@nero.local}
+      DEMO_USERNAME: ${DEMO_USERNAME:-nero_demo}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-NeroDemo2026!}
+
+    volumes:
+      - ./scripts/demo:/fixtures:ro
+
+    networks:
+      - backend
+
+    depends_on:
+      account-service:
+        condition: service_healthy
+      workout-service:
+        condition: service_healthy
