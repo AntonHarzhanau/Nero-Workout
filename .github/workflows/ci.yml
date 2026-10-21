@@ -48,9 +48,17 @@ jobs:
     with:
       working-directory: services/account-service
 
+  statistics:
+    name: Statistics
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.services), 'statistics')
+    uses: ./.github/workflows/python-tests.yml
+    with:
+      working-directory: services/statistics-service
+
   images:
     name: Docker / ${{ matrix.service }}
-    needs: [changes, front, workout, account]
+    needs: [changes, front, workout, account, statistics]
 
     if: >-
       ${{!cancelled() && needs.changes.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && needs.changes.outputs.services != '[]' }}
@@ -76,7 +84,7 @@ jobs:
   result:
     name: CI Result
     if: ${{ !cancelled() }}
-    needs: [changes, front, workout, account, images]
+    needs: [changes, front, workout, account, statistics, images]
     runs-on: ubuntu-24.04
 
     steps:
