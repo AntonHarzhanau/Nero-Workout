@@ -23,7 +23,7 @@ test("should register a user and sign in", async ({ page }) => {
   await expect(
     page.getByRole("heading", {
       level: 1,
-      name: `Bonjour, ${user.name}`,
+      name: `Bonjour, ${user.name.split(" ")[0]}`,
       exact: true,
     }),
   ).toBeVisible();

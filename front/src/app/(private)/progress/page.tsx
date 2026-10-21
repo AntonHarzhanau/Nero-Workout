@@ -1,7 +1,7 @@
-import { requireCurrentUser } from "@/features/auth/get-current-user";
+import { loadStatistics } from "@/features/statistics/load-statistics";
+import { StatisticsProgress } from "@/features/statistics/components/statistics-pages";
 
-export default async function ProgressPage() {
-  await requireCurrentUser();
-
-  return <h1 className="font-heading text-3xl">Progress</h1>;
+export default async function Page({ searchParams }: PageProps<"/progress">) {
+  const data = await loadStatistics("/progress", await searchParams);
+  return <StatisticsProgress data={data} />;
 }

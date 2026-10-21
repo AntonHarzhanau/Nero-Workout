@@ -2,8 +2,7 @@ import "server-only";
 
 import { createApiClient } from "@/lib/http/api-client";
 import {
-  overviewSchema,
-  progressionSchema,
+  reportSchema,
   strengthCurveSchema,
   type DateRange,
 } from "./contracts";
@@ -22,30 +21,22 @@ function query(params: URLSearchParams) {
 }
 
 export const statisticsApi = {
-  /** Month totals (current month by default, "YYYY-MM") and the current week. */
-  overview(token: string, month?: string) {
-    const params = new URLSearchParams();
-    if (month) params.set("month", month);
-
-    return request(`/stats/overview${query(params)}`, overviewSchema, {
-      token,
-    });
+  report(token: string, range: DateRange = {}) {
+    return request(
+      `/stats/report${query(withRange(new URLSearchParams(), range))}`,
+      reportSchema,
+      { token },
+    );
   },
-
   strengthCurve(exerciseId: string, token: string, range: DateRange = {}) {
     const params = withRange(new URLSearchParams({ exerciseId }), range);
 
-    return request(`/stats/strength-curve${query(params)}`, strengthCurveSchema, {
-      token,
-    });
-  },
-
-  /** Whole history by default. */
-  progression(token: string, range: DateRange = {}) {
-    const params = withRange(new URLSearchParams(), range);
-
-    return request(`/stats/progression${query(params)}`, progressionSchema, {
-      token,
-    });
+    return request(
+      `/stats/strength-curve${query(params)}`,
+      strengthCurveSchema,
+      {
+        token,
+      },
+    );
   },
 };
