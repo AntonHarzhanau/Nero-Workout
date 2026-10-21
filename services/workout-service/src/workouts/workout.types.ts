@@ -1,6 +1,6 @@
 import type { ExerciseView } from '../exercises/exercise.types.js';
 
-export interface WorkoutSetValues {
+interface WorkoutSetValues {
   position: number;
   weightKg: string;
   reps: number;
@@ -13,7 +13,7 @@ export interface WorkoutExerciseValues {
   sets: WorkoutSetValues[];
 }
 
-export interface PositionedWorkoutExerciseValues extends WorkoutExerciseValues {
+interface PositionedWorkoutExerciseValues extends WorkoutExerciseValues {
   position: number;
 }
 
@@ -36,7 +36,7 @@ export interface WorkoutSummary {
   updatedAt: Date;
 }
 
-export interface WorkoutSetView extends WorkoutSetValues {
+interface WorkoutSetView extends WorkoutSetValues {
   id: string;
 }
 

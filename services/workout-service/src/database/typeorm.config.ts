@@ -2,9 +2,6 @@ import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 export function createTypeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
-
-    const isProduction = config.getOrThrow<string>('NODE_ENV') === 'production';
-    console.log('isProduction', isProduction);
     return {
         type: 'postgres',
         host: config.getOrThrow<string>('DB_HOST'),
@@ -15,7 +12,7 @@ export function createTypeOrmOptions(config: ConfigService): TypeOrmModuleOption
         schema: 'workouts',
         autoLoadEntities: true,
         synchronize: false,
-        logging: isProduction ? ['error'] : ['error'],
+        logging: ['error'],
         maxQueryExecutionTime: 200
     }
 }

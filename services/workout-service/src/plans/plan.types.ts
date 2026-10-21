@@ -1,6 +1,6 @@
 import type { ExerciseView } from '../exercises/exercise.types.js';
 
-export interface PlanSetValues {
+interface PlanSetValues {
   position: number;
   weightKg: string;
   reps: number;
@@ -11,7 +11,7 @@ export interface PlanExerciseValues {
   sets: PlanSetValues[];
 }
 
-export interface PositionedPlanExerciseValues extends PlanExerciseValues {
+interface PositionedPlanExerciseValues extends PlanExerciseValues {
   position: number;
 }
 
@@ -30,7 +30,7 @@ export interface PlanSummary {
   updatedAt: Date;
 }
 
-export interface PlanSetView extends PlanSetValues {
+interface PlanSetView extends PlanSetValues {
   id: string;
 }
 

@@ -4,8 +4,6 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { DEV_USERS } from './dev-users.js';
 import type { AuthenticatedRequest } from './auth-user.js';
 import { JwtService } from '@nestjs/jwt';
 import { isUUID } from 'class-validator';
@@ -44,7 +42,7 @@ export class AuthGuard implements CanActivate {
       };
 
       return true;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
   }
