@@ -5,34 +5,37 @@ import { DEFAULT_MUSCLE_GROUPS } from './muscle-groups.data.js';
 import { MuscleGroupsService } from './muscle-groups.service.js';
 
 function setup() {
-  const query = {
-    insert: vi.fn().mockReturnThis(),
-    into: vi.fn().mockReturnThis(),
-    values: vi.fn().mockReturnThis(),
-    orIgnore: vi.fn().mockReturnThis(),
-    execute: vi.fn().mockResolvedValue(undefined),
-  };
   const orm = {
-    createQueryBuilder: vi.fn(() => query),
+    upsert: vi.fn().mockResolvedValue(undefined),
     find: vi.fn().mockResolvedValue([]),
   };
   const service = new MuscleGroupsService(
     orm as unknown as Repository<MuscleGroup>,
   );
-  return { service, orm, query };
+  return { service, orm };
 }
 
 describe('MuscleGroupsService', () => {
-  it('seeds catalog entries without replacing existing groups and waits for insertion', async () => {
-    const { service, query } = setup();
+  it('upserts the French catalog by code, preserving group IDs and updating names on restart', async () => {
+    const { service, orm } = setup();
     await service.onApplicationBootstrap();
-    expect(query.insert).toHaveBeenCalledOnce();
-    expect(query.into).toHaveBeenCalledExactlyOnceWith(MuscleGroup);
-    expect(query.values).toHaveBeenCalledExactlyOnceWith(DEFAULT_MUSCLE_GROUPS);
-    expect(query.orIgnore).toHaveBeenCalledOnce();
-    expect(query.execute).toHaveBeenCalledOnce();
+    expect(orm.upsert).toHaveBeenCalledExactlyOnceWith(DEFAULT_MUSCLE_GROUPS, {
+      conflictPaths: ['code'],
+      skipUpdateIfNoValuesChanged: true,
+    });
+    expect(DEFAULT_MUSCLE_GROUPS).toContainEqual({
+      code: 'chest',
+      name: 'Pectoraux',
+    });
+    expect(DEFAULT_MUSCLE_GROUPS).toContainEqual({
+      code: 'quads',
+      name: 'Quadriceps',
+    });
+    expect(new Set(DEFAULT_MUSCLE_GROUPS.map((group) => group.code)).size).toBe(
+      DEFAULT_MUSCLE_GROUPS.length,
+    );
     const error = new Error('Seed failed');
-    query.execute.mockRejectedValue(error);
+    orm.upsert.mockRejectedValue(error);
     await expect(service.onApplicationBootstrap()).rejects.toBe(error);
   });
 
