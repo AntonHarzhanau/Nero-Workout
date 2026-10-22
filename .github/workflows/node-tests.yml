@@ -30,7 +30,7 @@ jobs:
           cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --timing --loglevel=verbose
 
       - name: Run unit tests
         run: npm test
