@@ -6,14 +6,22 @@ on:
       context:
         required: true
         type: string
+
       image-name:
         required: true
         type: string
+
       target:
         description: Docker build stage; empty selects the final stage
         required: false
         type: string
         default: runtime
+
+      publish:
+        description: Publish the image to GHCR
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -22,10 +30,26 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Prepare cache settings
+        id: cache
+        env:
+          IMAGE_NAME: ghcr.io/${{ github.repository }}-${{ inputs.image-name }}
+          CACHE_SCOPE: ${{ inputs.image-name }}
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          if [[ "$PUBLISH" == "true" ]]; then
+            cache="type=registry,ref=${IMAGE_NAME,,}:buildcache"
+          else
+            cache="type=gha,scope=$CACHE_SCOPE"
+          fi
+          echo "from=$cache" >> "$GITHUB_OUTPUT"
+          echo "to=$cache,mode=max" >> "$GITHUB_OUTPUT"
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -44,9 +68,7 @@ jobs:
             org.opencontainers.image.description=Nero ${{ inputs.image-name }} service
 
       - name: Login to GHCR
-        if: >-
-          (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-          github.event_name == 'release'
+        if: inputs.publish
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -58,8 +80,8 @@ jobs:
         with:
           context: ${{ inputs.context }}
           target: ${{ inputs.target }}
-          push: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'release' }}
+          push: ${{ inputs.publish }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ inputs.image-name }}
-          cache-to: type=gha,mode=max,scope=${{ inputs.image-name }}
+          cache-from: ${{ steps.cache.outputs.from }}
+          cache-to: ${{ steps.cache.outputs.to }}

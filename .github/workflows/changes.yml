@@ -4,7 +4,7 @@ on:
   workflow_call:
     outputs:
       services:
-        description: JSON array of changed services
+        description: JSON array of images to build
         value: ${{ jobs.detect.outputs.services }}
 
 permissions:
@@ -14,47 +14,57 @@ permissions:
 jobs:
   detect:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
 
     outputs:
       services: ${{ github.ref_type == 'tag' && '["front", "workout", "account", "statistics", "init-secrets", "postgres"]' || steps.filter.outputs.changes }}
 
     steps:
+      - name: Validate release version
+        if: github.ref_type == 'tag'
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if ! [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Invalid release version. Expected vMAJOR.MINOR.PATCH, for example v1.0.0."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Verify release commit belongs to main
-        if: github.event_name == 'release'
+        if: github.ref_type == 'tag'
         run: git merge-base --is-ancestor HEAD origin/main
 
       - name: Detect changed services
-        if: github.ref_type != 'tag'
+        if: github.event_name == 'pull_request'
         id: filter
         uses: dorny/paths-filter@v4
         with:
-          base: ${{ github.ref }}
           filters: |
             front:
-                - 'front/**'
-                - '.github/workflows/**'
+              - 'front/**'
+              - '.github/workflows/**'
 
             workout:
-                - 'services/workout-service/**'
-                - '.github/workflows/**'
+              - 'services/workout-service/**'
+              - '.github/workflows/**'
 
             account:
-                - 'services/account-service/**'
-                - '.github/workflows/**'
+              - 'services/account-service/**'
+              - '.github/workflows/**'
 
             statistics:
-                - 'services/statistics-service/**'
-                - '.github/workflows/**'
+              - 'services/statistics-service/**'
+              - '.github/workflows/**'
 
             init-secrets:
-                - 'infra/secrets/**'
-                - '.github/workflows/**'
+              - 'infra/secrets/**'
+              - '.github/workflows/**'
 
             postgres:
-                - 'infra/postgres/**'
-                - '.github/workflows/**'
+              - 'infra/postgres/**'
+              - '.github/workflows/**'

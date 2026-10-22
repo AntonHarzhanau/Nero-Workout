@@ -5,9 +5,6 @@ on:
   pull_request:
     branches:
       - main
-  release:
-    types:
-      - published
 
 permissions:
   contents: read
@@ -19,6 +16,9 @@ concurrency:
 jobs:
   changes:
     name: Detect changes
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     permissions:
       contents: read
       pull-requests: read
@@ -26,32 +26,24 @@ jobs:
 
   front:
     name: Frontend
-    needs: changes
-    if: contains(fromJSON(needs.changes.outputs.services), 'front')
     uses: ./.github/workflows/node-tests.yml
     with:
       working-directory: front
 
   workout:
     name: Workout
-    needs: changes
-    if: contains(fromJSON(needs.changes.outputs.services), 'workout')
     uses: ./.github/workflows/node-tests.yml
     with:
       working-directory: services/workout-service
 
   account:
     name: Account
-    needs: changes
-    if: contains(fromJSON(needs.changes.outputs.services), 'account')
     uses: ./.github/workflows/php-tests.yml
     with:
       working-directory: services/account-service
 
   statistics:
     name: Statistics
-    needs: changes
-    if: contains(fromJSON(needs.changes.outputs.services), 'statistics')
     uses: ./.github/workflows/python-tests.yml
     with:
       working-directory: services/statistics-service
@@ -61,15 +53,24 @@ jobs:
     needs: [changes, front, workout, account, statistics]
 
     if: >-
-      ${{!cancelled() && needs.changes.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && needs.changes.outputs.services != '[]' }}
+      ${{
+        !cancelled() &&
+        needs.changes.result == 'success' &&
+        needs.front.result == 'success' &&
+        needs.workout.result == 'success' &&
+        needs.account.result == 'success' &&
+        needs.statistics.result == 'success' &&
+        needs.changes.outputs.services != '[]'
+      }}
 
     permissions:
       contents: read
       packages: write
 
     strategy:
+      fail-fast: true
       matrix:
-        service: ${{fromJSON(needs.changes.outputs.services) }}
+        service: ${{ fromJSON(needs.changes.outputs.services) }}
 
     uses: ./.github/workflows/docker-image.yml
     with:
@@ -80,12 +81,14 @@ jobs:
             matrix.service == 'postgres' && 'infra/postgres' ||
             format('services/{0}-service', matrix.service) }}
       target: ${{ matrix.service != 'init-secrets' && matrix.service != 'postgres' && 'runtime' || '' }}
+      publish: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
 
   result:
     name: CI Result
     if: ${{ !cancelled() }}
     needs: [changes, front, workout, account, statistics, images]
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
 
     steps:
       - name: Check results
@@ -93,6 +96,9 @@ jobs:
           RESULTS: ${{ toJSON(needs) }}
         run: |
           echo "$RESULTS" | jq -e '
-            .changes.result == "success" and
+            .front.result == "success" and
+            .workout.result == "success" and
+            .account.result == "success" and
+            .statistics.result == "success" and
             all(.[]; .result == "success" or .result == "skipped")
           '
