@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import Stats from "@/components/stats";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,7 +14,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className="h-full antialiased font-sans dark"
     >
-      <body>{children}</body>
+      <body>
+        {children}
+
+        <Suspense fallback={null}>
+          <Stats />
+        </Suspense>
+      </body>
     </html>
   );
 }
