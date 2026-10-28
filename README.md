@@ -1,11 +1,17 @@
 # nero
 
+Application de suivi de musculation en micro-services (Next.js, Symfony, NestJS,
+FastAPI, PostgreSQL, Redis).
+
+La documentation du projet (architecture, authentification, données,
+Dockerfiles, compose, CI/CD, gestion de projet, rétrospective) est dans
+[docs/](docs/README.md).
+
 ## Prérequis
 
 - Docker Desktop (Docker Compose v2)
-- OpenSSL (fourni avec Git Bash sous Windows)
 
-Aucun PHP ni Composer n'est nécessaire sur la machine : tout tourne dans les conteneurs.
+Aucun PHP, Node.js ni Python n'est nécessaire sur la machine : tout tourne dans les conteneurs.
 
 ## Installation locale
 
@@ -15,36 +21,29 @@ Toutes les commandes se lancent depuis la racine du projet.
 
 ```bash
 cp .env.example .env
-cp services/account-service/.env.example services/account-service/.env
 ```
 
-### 2. Secrets
+Renseigner au minimum `ACCOUNT_APP_SECRET` et `REDIS_PASSWORD` (par exemple avec
+`openssl rand -hex 32`). Le compose refuse de démarrer si une variable
+obligatoire manque.
 
-#### Clés JWT
-
-L'account-service signe les JWT avec une clé privée RSA ; les autres services les vérifient avec la clé publique. Les clés sont montées dans les conteneurs comme secrets Docker et ne sont jamais commitées (`secrets/` est ignoré par Git).
-
-```bash
-mkdir -p secrets
-openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out secrets/jwt_private.pem
-openssl pkey -in secrets/jwt_private.pem -pubout -out secrets/jwt_public.pem
-```
-
-#### Jeton interne entre services
-
-Les routes `/internal/...` (appels entre services, jamais exposées au front) exigent l'en-tête `X-Internal-Token`, dont la valeur est partagée via un secret Docker :
-
-```bash
-openssl rand -hex 32 | tr -d '\r\n' > secrets/internal_api_token
-```
-
-### 3. Démarrage
+### 2. Démarrage
 
 ```bash
 docker compose up -d --build --wait
-docker compose exec account-service composer install
-docker compose exec account-service php bin/console doctrine:migrations:migrate --no-interaction
 ```
+
+Cette commande construit les images, puis :
+
+- `init-secrets` génère au premier lancement la paire de clés RSA des JWT et le
+  jeton interne entre services (`X-Internal-Token`), dans des volumes Docker ;
+- `account-migration` et `workout-migration` appliquent les migrations ;
+- les services démarrent une fois leurs dépendances prêtes.
+
+L'application est disponible sur <http://localhost:3000> (port modifiable avec
+`FRONT_PORT`). Les backends, PostgreSQL et Redis ne sont pas exposés.
+
+### 3. Compte admin
 
 Les comptes admin ne peuvent pas être créés via l'API. Pour en créer un (le mot de passe est demandé de façon masquée) :
 
@@ -52,7 +51,7 @@ Les comptes admin ne peuvent pas être créés via l'API. Pour en créer un (le 
 docker compose exec account-service php bin/console app:create-admin "Admin" admin admin@nero.local
 ```
 
-### 4. Vérifications
+### 4. Vérifications (facultatif)
 
 Connexion à la base avec le rôle dédié du service (attendu : `account_app | nero | accounts`) :
 
