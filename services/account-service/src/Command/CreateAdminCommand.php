@@ -11,8 +11,8 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Attribute\Option;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-
 
 #[AsCommand(name: 'app:create-admin', description: 'Creates an admin account')]
 final class CreateAdminCommand
@@ -20,6 +20,7 @@ final class CreateAdminCommand
     public function __construct(
         private readonly AccountService $accounts,
         private readonly ValidatorInterface $validator,
+        #[Autowire(env: 'default::ADMIN_PASSWORD')] private readonly ?string $envPassword = null,
     ) {
     }
 
@@ -28,9 +29,17 @@ final class CreateAdminCommand
         #[Argument(description: 'Display name')] string $name,
         #[Argument(description: 'Unique username')] string $username,
         #[Argument(description: 'Email used to log in')] string $email,
-        #[Option(description: 'Password (prompted, hidden, when omitted)')] ?string $password = null,
+        #[Option(description: 'Password (falls back to ADMIN_PASSWORD, then a hidden prompt)')] ?string $password = null,
+        #[Option(description: 'Do nothing when an admin account already exists')] bool $skipIfExists = false,
     ): int {
-        $password ??= (string) $io->askHidden('Password');
+        if ($skipIfExists && $this->accounts->hasAdmin()) {
+            $io->note('An admin account already exists, nothing to do.');
+
+            return Command::SUCCESS;
+        }
+
+        // Read from the environment rather than argv so the password does not show up in the process list
+        $password ??= $this->envPassword ?: (string) $io->askHidden('Password');
 
         $request = new RegisterRequest($name, $username, $email, $password);
         $violations = $this->validator->validate($request);

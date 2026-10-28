@@ -26,7 +26,6 @@ test("should create a plan with an exercise and sets", async ({ page }) => {
     exact: true,
   });
 
-  // Заголовок таблицы и три стандартных подхода.
   await expect(table.getByRole("row")).toHaveCount(4);
 
   const firstSet = table.getByRole("row").nth(1);

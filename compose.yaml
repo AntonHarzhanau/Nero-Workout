@@ -68,11 +68,17 @@ services:
       APP_SECRET: ${ACCOUNT_APP_SECRET:?ACCOUNT_APP_SECRET is required}
       DEFAULT_URI: http://account-service:8080
 
+      ADMIN_NAME: ${ADMIN_NAME:-Admin}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@nero.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
+
     command:
-      - php
-      - bin/console
-      - doctrine:migrations:migrate
-      - --no-interaction
+      - sh
+      - -c
+      - >-
+        php bin/console doctrine:migrations:migrate --no-interaction
+        && php bin/console app:create-admin "$$ADMIN_NAME" "$$ADMIN_USERNAME" "$$ADMIN_EMAIL" --skip-if-exists --no-interaction
 
     restart: "no"
 
@@ -320,7 +326,6 @@ networks:
     driver: bridge
     internal: true
 
-  # statistics-service <-> Redis only
   cache:
     driver: bridge
     internal: true

@@ -45,7 +45,7 @@ L'application est disponible sur <http://localhost:3000> (port modifiable avec
 
 ### 3. Compte admin
 
-Les comptes admin ne peuvent pas être créés via l'API. Pour en créer un (le mot de passe est demandé de façon masquée) :
+Les comptes admin ne peuvent pas être créés via l'API. Au premier démarrage, `account-migration` crée un admin à partir de `ADMIN_NAME`, `ADMIN_USERNAME`, `ADMIN_EMAIL` et `ADMIN_PASSWORD` (`.env`) ; s'il existe déjà un admin, rien n'est fait. Pour en créer un autre à la main (le mot de passe est demandé de façon masquée) :
 
 ```bash
 docker compose exec account-service php bin/console app:create-admin "Admin" admin admin@nero.local

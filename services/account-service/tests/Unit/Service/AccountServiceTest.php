@@ -97,6 +97,16 @@ final class AccountServiceTest extends TestCase
         $this->createService(em: $em, workout: $workout)->delete(new User('Alice', 'alice', 'alice@example.com'));
     }
 
+    public function testHasAdminCountsAdminAccounts(): void
+    {
+        $users = $this->createMock(UserRepository::class);
+        $users->expects($this->exactly(2))->method('count')->with(['role' => UserRole::Admin])->willReturn(0, 1);
+        $service = $this->createService(users: $users);
+
+        self::assertFalse($service->hasAdmin());
+        self::assertTrue($service->hasAdmin());
+    }
+
     public function testListAllReturnsUsersByCreationDate(): void
     {
         $users = $this->createMock(UserRepository::class);
