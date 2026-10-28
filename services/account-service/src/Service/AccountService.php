@@ -62,6 +62,11 @@ class AccountService
         $this->em->flush();
     }
 
+    public function hasAdmin(): bool
+    {
+        return $this->users->count(['role' => UserRole::Admin]) > 0;
+    }
+
     /**
      * @return list<User>
      */
