@@ -42,6 +42,12 @@ Cette commande construit les images, puis :
 
 L'application est disponible sur <http://localhost:3000> (port modifiable avec
 `FRONT_PORT`). Les backends, PostgreSQL et Redis ne sont pas exposés.
+La racine `/` redirige vers `/login`, la page d'accueil publique ; `/register`
+permet de créer un compte. Les pages métier sont accessibles après connexion.
+
+Les limites CPU / RAM des conteneurs sont définies dans les fichiers Compose
+([détail des valeurs](docs/05-docker-compose.md#limites-cpu--mémoire)). Elles
+s'appliquent à l'exécution, pas à la construction des images.
 
 ### 3. Compte admin
 
@@ -100,3 +106,17 @@ sont conservés. Les noms du catalogue sont mis à jour, les groupes manquants a
 
 Dashboard et Progression utilisent les API authentifiées réelles. Le choix de
 l'exercice est conservé sur l'appareil, séparément pour chaque utilisateur.
+
+## Images publiées et déploiement
+
+La CI exécute les tests à chaque push de branche ou de tag et à chaque pull
+request. Les images sont construites et publiées sur GHCR pour `main` ; un tag
+de release réutilise l'image `sha-<commit>` déjà publiée. Attendre la réussite
+du pipeline de `main` avant de pousser le tag correspondant. Ce choix limite
+les builds et la charge CI ([détails](docs/06-ci-cd.md)).
+
+Le fichier local `test.compose.yaml` (ignoré par Git, absent d'un clone) déploie
+les images GHCR avec `NERO_TAG` et utilise le réseau
+externe `traefik_public` pour servir <https://workout.projects.hardev.eu>.
+Il nécessite Traefik déjà configuré et les variables de connexion et secrets
+du déploiement. Les limites CPU / RAM sont identiques à celles de `compose.yaml`.

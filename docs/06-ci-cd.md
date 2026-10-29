@@ -122,6 +122,10 @@ Les images sont publiées sur **GitHub Container Registry** :
 
 Les étiquettes sont calculées par `docker/metadata-action`.
 
+Ce fonctionnement est volontaire : les branches et les pull requests exécutent
+les tests sans construire ni publier les six images. Les builds sont réservés
+à `main` pour réduire la charge CI ; les tags réutilisent ces images.
+
 ### Une release ne reconstruit pas l'image
 
 ```mermaid
@@ -142,6 +146,10 @@ sequenceDiagram
 Pour un tag, l'étape `imagetools create` ajoute l'étiquette du tag à l'image
 `sha-<commit>` déjà construite et testée sur `main`. L'image de release est donc
 exactement celle qui a passé la CI, octet pour octet.
+
+Avant de pousser un tag, attendre que le pipeline du commit correspondant sur
+`main` ait publié les six images `sha-<commit>`. Si une image SHA manque, le
+ré-étiquetage échoue : le pipeline ne lance pas de build de remplacement.
 
 ### Cache de build
 
@@ -164,5 +172,3 @@ couches des builds précédents.
 - Analyse de vulnérabilités des images (Trivy, Docker Scout).
 - Lint et analyse statique dans la pipeline (oxlint, ESLint, PHPStan, Ruff).
 - Test de démarrage du `compose.yaml` complet dans la CI.
-- Publication d'une image pour chaque commit de branche, pas seulement sur
-  `main` et les tags.

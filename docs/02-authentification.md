@@ -39,7 +39,7 @@ sequenceDiagram
     A->>A: signature du JWT (clé privée RS256)
     A->>DB: INSERT session (hash du refresh token, expiration)
     A-->>F: {accessToken, refreshToken, expiresIn}
-    F-->>U: Set-Cookie HttpOnly ×2 + redirection vers returnTo
+    F-->>U: Set-Cookie HttpOnly ×2 + redirection vers next
 ```
 
 ## Rafraîchissement et déconnexion
@@ -96,9 +96,10 @@ dans l'account-service et sa base.
 ```mermaid
 flowchart TD
     req[Requête sur une page] --> group{Groupe de routes}
-    group -- "/ , /login, /register" --> ok[Page affichée]
+    group -- "/" --> home["Redirection /login (accueil public)"]
+    group -- "/login, /register" --> ok[Page affichée]
     group -- "(private)" --> cookie{Cookie access token ?}
-    cookie -- non --> redirect["Redirection /login?returnTo=…"]
+    cookie -- non --> redirect["Redirection /login?next=…"]
     cookie -- oui --> me{"GET /users/me"}
     me -- 401 --> redirect
     me -- 200 --> admin{"Page /users ?"}
@@ -110,9 +111,9 @@ flowchart TD
 
 - Toutes les pages privées sont sous le layout `(private)`, qui appelle
   `requireCurrentUser()` : un visiteur non connecté est redirigé vers la page de
-  connexion, puis renvoyé à la page demandée (`returnTo`) une fois connecté.
-- Avant connexion, seules la page d'accueil, `/login` et `/register` sont
-  accessibles.
+  connexion, puis renvoyé à la page demandée (paramètre `next`) une fois connecté.
+- `/login` est la page d'accueil publique du site ; `/` y redirige.
+  Avant connexion, l'accueil et `/register` sont accessibles.
 - Le front ne fait que **masquer** ce qui n'est pas autorisé. La vraie
   vérification se fait dans les backends, qui valident le JWT et le rôle à
   chaque requête.

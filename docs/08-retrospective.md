@@ -38,4 +38,6 @@ flowchart LR
 - **Enrichir la pipeline** : analyse de vulnérabilités des images (Trivy,
   Docker Scout), lint systématique, test de démarrage du compose complet.
 - **Définir dès le départ les fichiers d'environnement et les limites de
-  ressources** dans le compose.
+  ressources** dans le compose : les plafonds CPU / RAM ont été ajoutés en fin
+  de projet, avec les mêmes valeurs pour le lancement local et le déploiement
+  GHCR.

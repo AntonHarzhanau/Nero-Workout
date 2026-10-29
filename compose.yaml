@@ -14,6 +14,11 @@ x-workout-db: &workout-db
 
 services:
   postgres:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
     image: nero-postgres-v1
     build: ./infra/postgres
 
@@ -46,6 +51,11 @@ services:
       start_period: 10s
 
   init-secrets:
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
     build:
       context: ./infra/secrets
 
@@ -58,6 +68,11 @@ services:
       - internal_token:/generated/internal
 
   account-migration:
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
     build:
       context: ./services/account-service
       target: runtime
@@ -98,6 +113,11 @@ services:
         condition: service_completed_successfully
 
   account-service:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
     build:
       context: ./services/account-service
       target: runtime
@@ -146,6 +166,11 @@ services:
         condition: service_completed_successfully
 
   workout-migration:
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
     build:
       context: ./services/workout-service
       target: runtime
@@ -170,6 +195,11 @@ services:
         condition: service_healthy
 
   workout-service:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
     build:
       context: ./services/workout-service
       target: runtime
@@ -213,6 +243,11 @@ services:
         condition: service_completed_successfully
 
   redis:
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
     image: redis:8.10.3-alpine3.23@sha256:21090af93f8324db2f0f0f4f38a7c60369d47d917e000c3423d89d2ae2883537
 
     restart: "unless-stopped"
@@ -239,6 +274,11 @@ services:
       start_period: 5s
 
   statistics-service:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
     build:
       context: ./services/statistics-service
       target: runtime
@@ -279,6 +319,11 @@ services:
         condition: service_started
 
   front:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
     build:
       context: ./front
       target: runtime

@@ -6,6 +6,12 @@ L'application complète démarre en une commande :
 
 ```bash
 cp .env.example .env
+```
+
+Renseigner `ACCOUNT_APP_SECRET` et `REDIS_PASSWORD` dans `.env` (par exemple
+avec `openssl rand -hex 32` pour chaque valeur), puis lancer :
+
+```bash
 docker compose up -d --build --wait
 ```
 
@@ -172,8 +178,13 @@ services:
 
 ## Environnements (TEST / UAT / PROD)
 
-La configuration dépend uniquement du fichier `.env` : le même `compose.yaml`
-sert à tous les environnements.
+Les variables d'environnement permettent d'adapter `compose.yaml` au lancement
+local. Le fichier local `test.compose.yaml`, ignoré par Git et absent d'un clone,
+est la variante de déploiement : il utilise les
+images GHCR sélectionnées par `NERO_TAG`, et expose le front via Traefik sur
+`workout.projects.hardev.eu`, sans publier de port sur l'hôte. Le réseau externe
+`traefik_public` et Traefik doivent déjà être configurés. Les services, volumes
+et limites de ressources suivent la même structure dans les deux fichiers.
 
 | Variable | Rôle | Exemple TEST / UAT / PROD |
 |---|---|---|
@@ -197,9 +208,37 @@ flowchart LR
 docker compose --env-file .env.uat up -d --wait
 ```
 
-> TODO : ajouter les fichiers d'exemple par environnement et les limites CPU /
-> mémoire (`deploy.resources.limits`) si elles sont ajoutées au compose avant le
-> rendu.
+Les noms `.env.test`, `.env.uat` et `.env.prod` illustrent des configurations
+possibles ; ces fichiers ne sont pas fournis dans le dépôt. Le modèle livré est
+`.env.example`.
+
+## Limites CPU / mémoire
+
+`compose.yaml` et `test.compose.yaml` définissent `deploy.resources.limits`
+pour chaque conteneur. `compose.demo.yaml` limite aussi le conteneur de fixtures.
+
+| Service | CPU (équivalent cœur) | RAM maximale |
+|---|---|---|
+| postgres | 1 | 512 Mio |
+| account-service | 1 | 512 Mio |
+| workout-service | 1 | 512 Mio |
+| statistics-service | 1 | 512 Mio |
+| front | 1 | 512 Mio |
+| redis | 0,25 | 128 Mio |
+| init-secrets | 0,25 | 64 Mio |
+| account-migration | 0,5 | 512 Mio |
+| workout-migration | 0,5 | 256 Mio |
+| demo-fixture (sur demande) | 0,5 | 256 Mio |
+
+Ce sont des plafonds d'exécution par conteneur, sans réservation de CPU ou de
+RAM. Ils ne limitent pas la construction des images. Les six services permanents
+ont un plafond RAM cumulé de 2 688 Mio ; prévoir aussi le système hôte et les
+conteneurs ponctuels. Redis conserve `maxmemory 64mb` pour ses données, sous le
+plafond de 128 Mio du conteneur.
+
+Ces valeurs constituent un dimensionnement initial pour la démonstration et
+restent à valider en charge. Une modification du fichier Compose prend effet
+lors de la recréation des conteneurs concernés.
 
 ## Données de démonstration
 

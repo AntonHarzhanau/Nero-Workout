@@ -1,5 +1,10 @@
 services:
   demo-fixture:
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
     build:
       context: ./services/statistics-service
       target: runtime

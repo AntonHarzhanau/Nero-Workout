@@ -141,9 +141,9 @@ pages sont réparties en deux groupes de routes :
 
 ```mermaid
 flowchart LR
-    root["/ (accueil)"]
+    root["/"] --> login
     subgraph auth["(auth) - publiques"]
-        login["/login"]
+        login["/login (accueil public)"]
         register["/register"]
     end
     subgraph private["(private) - session requise"]

@@ -7,6 +7,9 @@ Nero est une application web de suivi de musculation : catalogue d'exercices,
 plans d'entraînement, saisie des séances (séries, charges, répétitions) et
 tableau de bord de progression.
 
+Le rapport de projet, disponible en [français](rapport.md), regroupe l'architecture, les choix
+Docker et CI/CD, l'organisation du travail et la rétrospective dans un seul document.
+
 ```mermaid
 flowchart LR
     client([Navigateur]) -- ":3000" --> front[front<br/>Next.js]
@@ -37,10 +40,17 @@ flowchart LR
 
 ```bash
 cp .env.example .env
+```
+
+Renseigner `ACCOUNT_APP_SECRET` et `REDIS_PASSWORD` dans `.env` avant de
+démarrer (par exemple avec `openssl rand -hex 32` pour chaque valeur).
+
+```bash
 docker compose up -d --build --wait
 ```
 
-Application disponible sur <http://localhost:3000>. Les détails (compte admin,
+Application disponible sur <http://localhost:3000> : `/` redirige vers `/login`,
+la page d'accueil publique. Les détails (compte admin,
 données de démonstration) sont dans le [README principal](../README.md).
 
 ## Respect des contraintes du sujet
@@ -60,10 +70,10 @@ données de démonstration) sont dans le [README principal](../README.md).
 | Comptes standard / admin | `standard` à l'inscription, `admin` par commande console | [2](02-authentification.md#rôles-et-suppression-de-comptes) |
 | Suppression de son compte | `DELETE /users/me` (données d'entraînement purgées) | [2](02-authentification.md#rôles-et-suppression-de-comptes) |
 | Admin supprime des comptes standard | `DELETE /admin/users/{id}`, règle dans `UserVoter` | [2](02-authentification.md#rôles-et-suppression-de-comptes) |
-| Accès restreint avant connexion | Layout `(private)` avec redirection vers `/login` | [2](02-authentification.md#contrôle-daccès-côté-front) |
+| Accès restreint avant connexion | Accueil public `/login`, inscription `/register`, layout `(private)` protégé | [2](02-authentification.md#contrôle-daccès-côté-front) |
 | Dockerfiles | Un par service, multi-étapes, non root | [4](04-dockerfiles.md) |
 | docker-compose en une commande | `docker compose up -d --build --wait` | [5](05-docker-compose.md) |
-| CI à chaque commit / tag | `on: push` + `pull_request` | [6](06-ci-cd.md) |
+| Tests à chaque push de commit / tag | `on: push` + `pull_request` ; builds sur `main`, ré-étiquetage aux tags | [6](06-ci-cd.md) |
 | Image avec identifiant unique | `sha-<commit>` ou nom du tag | [6](06-ci-cd.md#images-et-identifiants-uniques) |
 | Publication dans un registre | GitHub Container Registry | [6](06-ci-cd.md#images-et-identifiants-uniques) |
 | Échec immédiat en cas d'erreur | `needs` + matrice `fail-fast` + job `CI Result` | [6](06-ci-cd.md) |
