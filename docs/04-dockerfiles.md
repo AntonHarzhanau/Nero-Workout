@@ -10,13 +10,33 @@ images d'infrastructure (`infra/postgres`, `infra/secrets`).
 | Bonne pratique | Mise en œuvre |
 |---|---|
 | **Builds multi-étapes** | Les outils de build (compilateur TypeScript, Composer, uv, dépendances de dev) restent dans les étapes intermédiaires ; l'étape finale `runtime` ne contient que l'application et ses dépendances de production. |
-| **Images de base officielles et épinglées** | `node:24-bookworm-slim`, `python:3.13-slim`, `dunglas/frankenphp:1-php8.4`, `postgres:17`, `alpine:3.22`, en variante *slim* quand elle existe. |
+| **Images de base officielles et épinglées** | Versions exactes et digest `sha256` pour toutes les images externes (y compris Composer, uv et Redis). Voir le tableau ci-dessous. |
 | **Utilisateur non root** | `node` pour les images Node, un utilisateur système `app` sans shell pour PHP et Python. |
 | **Ordre des couches** | Les manifestes (`package-lock.json`, `composer.lock`, `uv.lock`) sont copiés et installés avant le code : modifier le code ne réinstalle pas les dépendances. |
-| **Cache des gestionnaires de paquets** | `RUN --mount=type=cache` pour npm et uv : le cache sert aux rebuilds mais n'entre pas dans l'image. |
+| **Cache des gestionnaires de paquets** | `RUN --mount=type=cache` pour npm, Composer et uv : le cache sert aux rebuilds mais n'entre pas dans l'image. |
 | **Installations reproductibles** | `npm ci`, `composer install` sur le lock, `uv sync --locked`. |
 | **Contexte de build minimal** | Un `.dockerignore` par service exclut `node_modules`/`vendor`, `.git`, les fichiers `.env` et les tests. |
 | **Pas de secret dans les images** | Secrets et mots de passe sont injectés à l'exécution ([voir compose](05-docker-compose.md#secrets)). |
+
+## Versions des images
+
+Les références complètes avec digest sont conservées dans les Dockerfiles et les
+fichiers Compose. Le digest verrouille le contenu ; les mises à jour de sécurité
+nécessitent de mettre à jour ces références et de reconstruire les images.
+
+| Image | Version |
+|---|---|
+| node | `node:24.22.2-bookworm-slim` |
+| postgres | `postgres:17.11-trixie` |
+| redis | `redis:8.10.3-alpine3.23` |
+| python | `python:3.13.18-slim-trixie` |
+| alpine | `alpine:3.22.7` |
+| frankenphp | `dunglas/frankenphp:1.13.4-php8.4.27-bookworm` |
+| composer | `composer:2.10.3` |
+| uv | `ghcr.io/astral-sh/uv:0.13.4` |
+
+Node.js, PHP, Composer et Python utilisent aussi ces versions exactes dans CI.
+uv reste en version 0.13.4 dans Docker et CI.
 
 ## Schéma général d'un build multi-étapes
 
@@ -75,10 +95,12 @@ flowchart LR
   besoin d'un couple nginx + php-fpm.
 - L'autoloader Composer est optimisé (`--classmap-authoritative`) et le cache
   Symfony est préchauffé pendant le build, d'où un démarrage rapide.
+- PHP charge `php.ini-production` : les erreurs sont journalisées, leur affichage
+  est désactivé et l'en-tête `X-Powered-By` est supprimé (`expose_php=Off`).
 - Le service écoute sur le port 8080 (non privilégié) et la capability réseau
   du binaire est retirée (`setcap -r`) pour qu'il tourne sous l'utilisateur
   `app`.
-- La commande Composer est copiée depuis l'image officielle `composer:2` et
+- La commande Composer est copiée depuis l'image officielle `composer:2.10.3` et
   n'est pas présente dans l'image finale.
 
 ### statistics-service (FastAPI)
@@ -98,8 +120,8 @@ flowchart LR
 
 | Image | Contenu |
 |---|---|
-| `infra/postgres` | `postgres:17` + `init.sql` dans `docker-entrypoint-initdb.d` (rôles et schémas, [voir Données](03-donnees.md)) |
-| `infra/secrets` | `alpine:3.22` + OpenSSL + script de génération des secrets ([voir compose](05-docker-compose.md#secrets)) |
+| `infra/postgres` | `postgres:17.11-trixie` + `init.sql` dans `docker-entrypoint-initdb.d` (rôles et schémas, [voir Données](03-donnees.md)) |
+| `infra/secrets` | `alpine:3.22.7` + OpenSSL + script de génération des secrets ([voir compose](05-docker-compose.md#secrets)) |
 
 ## Healthchecks sans outil supplémentaire
 
