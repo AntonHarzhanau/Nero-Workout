@@ -24,7 +24,7 @@ docker compose up -d --build --wait
 | Service | Type | Image / build | Rôle |
 |---|---|---|---|
 | `postgres` | permanent | `infra/postgres` | Base de données |
-| `redis` | permanent | `redis:8-alpine` | Cache des statistiques |
+| `redis` | permanent | `redis:8.10.3-alpine3.23` (épinglée par SHA256) | Cache des statistiques |
 | `init-secrets` | ponctuel | `infra/secrets` | Génère les clés JWT et le jeton interne |
 | `account-migration` | ponctuel | image account-service | Migrations Doctrine |
 | `workout-migration` | ponctuel | image workout-service | Migrations TypeORM |
@@ -137,6 +137,7 @@ flowchart LR
     vpriv -- ro --> acc[account-service]
     vpub -- ro --> acc
     vtok -- ro --> acc
+    vtok -- ro --> am[account-migration]
 
     vpub -- ro --> wo[workout-service]
     vtok -- ro --> wo
@@ -152,8 +153,8 @@ flowchart LR
   que la clé publique correspond bien à la clé privée. Un redémarrage n'invalide
   donc pas les sessions.
 - **Moindre privilège** : seul l'account-service monte la clé privée. Les autres
-  ne reçoivent que la clé publique et le jeton interne, toujours en lecture
-  seule (`:ro`).
+  ne reçoivent que la clé publique et le jeton interne (`account-migration` : le
+  jeton seulement), toujours en lecture seule (`:ro`).
 - **Variables obligatoires** : les mots de passe sont déclarés en
   `${VAR:?VAR is required}`. `docker compose` refuse de démarrer si l'une
   d'elles manque, plutôt que de lancer une base sans mot de passe.

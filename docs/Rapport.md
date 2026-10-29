@@ -100,7 +100,7 @@ Les backends démarrent après les migrations ; le frontend attend les API.
 L’ordre est défini par les healthchecks et `depends_on`.
 
 Compose définit quatre réseaux : `public`, `backend`, `database` et `cache`.
-Les trois derniers sont internes. Seul le frontend publie le port `3000:3000` ;
+Les trois derniers sont internes. Seul le frontend publie un port (`FRONT_PORT`, 3000 par défaut) ;
 il n’est pas connecté au réseau de la base. PostgreSQL stocke ses données
 dans `postgres_data`. Les fichiers de clés sont montés en lecture seule.
 

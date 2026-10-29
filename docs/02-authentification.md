@@ -122,14 +122,16 @@ flowchart TD
 
 | Action | standard | admin |
 |---|---|---|
-| Créer un compte via le site | Oui (rôle `standard`) | Non (commande console uniquement) |
+| Créer un compte via le site | Oui (rôle `standard`) | Non (démarrage ou commande console) |
 | Supprimer son propre compte | Oui | Oui |
 | Lister les comptes | Non | Oui |
 | Supprimer un compte standard | Non | Oui |
 | Supprimer un autre admin | Non | Non |
 
-Ces règles sont centralisées dans un *voter* Symfony (`UserVoter`). Un admin se
-crée avec :
+Ces règles sont centralisées dans un *voter* Symfony (`UserVoter`). Au premier
+démarrage, `account-migration` crée un admin à partir de `ADMIN_NAME`,
+`ADMIN_USERNAME`, `ADMIN_EMAIL` et `ADMIN_PASSWORD` (`.env`) ; si un admin
+existe déjà, rien n'est fait. Un autre admin se crée à la main avec :
 
 ```bash
 docker compose exec account-service php bin/console app:create-admin "Admin" admin admin@nero.local

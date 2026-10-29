@@ -7,7 +7,7 @@ Nero est une application web de suivi de musculation : catalogue d'exercices,
 plans d'entraînement, saisie des séances (séries, charges, répétitions) et
 tableau de bord de progression.
 
-Le rapport de projet, disponible en [français](rapport.md), regroupe l'architecture, les choix
+Le rapport de projet, disponible en [français](Rapport.md), regroupe l'architecture, les choix
 Docker et CI/CD, l'organisation du travail et la rétrospective dans un seul document.
 
 ```mermaid
@@ -67,7 +67,7 @@ données de démonstration) sont dans le [README principal](../README.md).
 | Backends et base non joignables | Réseaux `internal`, aucun port publié | [5](05-docker-compose.md) |
 | Tests unitaires par backend | PHPUnit, Vitest, pytest | [1](01-architecture.md#tests) |
 | Création de compte, login, logout | `/auth/register`, `/auth/login`, `/auth/logout` | [2](02-authentification.md) |
-| Comptes standard / admin | `standard` à l'inscription, `admin` par commande console | [2](02-authentification.md#rôles-et-suppression-de-comptes) |
+| Comptes standard / admin | `standard` à l'inscription, `admin` créé au premier démarrage (`ADMIN_*`) ou par commande console | [2](02-authentification.md#rôles-et-suppression-de-comptes) |
 | Suppression de son compte | `DELETE /users/me` (données d'entraînement purgées) | [2](02-authentification.md#rôles-et-suppression-de-comptes) |
 | Admin supprime des comptes standard | `DELETE /admin/users/{id}`, règle dans `UserVoter` | [2](02-authentification.md#rôles-et-suppression-de-comptes) |
 | Accès restreint avant connexion | Accueil public `/login`, inscription `/register`, layout `(private)` protégé | [2](02-authentification.md#contrôle-daccès-côté-front) |
