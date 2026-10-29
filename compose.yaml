@@ -73,6 +73,12 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@nero.local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
 
+      WORKOUT_SERVICE_URL: http://workout-service:3001
+      INTERNAL_API_TOKEN_FILE: /run/nero/internal/internal_api_token
+
+    volumes:
+      - internal_token:/run/nero/internal:ro
+
     command:
       - sh
       - -c
@@ -88,6 +94,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      init-secrets:
+        condition: service_completed_successfully
 
   account-service:
     build:
@@ -205,7 +213,7 @@ services:
         condition: service_completed_successfully
 
   redis:
-    image: redis:8-alpine
+    image: redis:8.10.3-alpine3.23@sha256:21090af93f8324db2f0f0f4f38a7c60369d47d917e000c3423d89d2ae2883537
 
     restart: "unless-stopped"
 

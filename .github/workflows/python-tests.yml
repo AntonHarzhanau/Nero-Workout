@@ -26,6 +26,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           version: "0.13.4"
+          python-version: "3.13.18"
           enable-cache: true
           cache-dependency-glob: ${{ inputs.working-directory }}/uv.lock
 

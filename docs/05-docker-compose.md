@@ -69,6 +69,9 @@ flowchart LR
   jamais sur un schéma pas à jour.
 - Les migrations utilisent **la même image** que leur service, avec une autre
   commande : il n'y a pas d'image à maintenir en plus.
+- Dans `compose.yaml`, `account-migration` crée aussi l'administrateur. Il attend
+  `init-secrets` et reçoit le jeton interne en lecture seule ainsi que l'URL du
+  workout-service, nécessaires à l'initialisation du service de comptes.
 - Si une étape échoue, `docker compose up --wait` échoue lui aussi au lieu de
   démarrer une application à moitié fonctionnelle.
 

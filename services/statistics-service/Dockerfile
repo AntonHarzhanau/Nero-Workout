@@ -1,6 +1,6 @@
-FROM python:3.13-slim AS build
+FROM python:3.13.18-slim-trixie@sha256:76baad6037690d6e8c4397fbcaef17bca6f19eecef822b708fe8fa3417d30bb5 AS build
 
-COPY --from=ghcr.io/astral-sh/uv:0.13.4 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.13.4@sha256:9f130421e930bfbdc563c00740466603f8723158e90297d07957c2294640262b /uv /bin/uv
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-editable
 COPY tests ./tests
 CMD ["uv", "run", "--no-sync", "pytest", "-q"]
 
-FROM python:3.13-slim AS runtime
+FROM python:3.13.18-slim-trixie@sha256:76baad6037690d6e8c4397fbcaef17bca6f19eecef822b708fe8fa3417d30bb5 AS runtime
 
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
