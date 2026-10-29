@@ -22,11 +22,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: ${{ inputs.working-directory }}/.python-version
+
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
         with:
           version: "0.13.4"
-          python-version: "3.13.18"
           enable-cache: true
           cache-dependency-glob: ${{ inputs.working-directory }}/uv.lock
 
