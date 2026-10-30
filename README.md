@@ -9,7 +9,8 @@ Dockerfiles, compose, CI/CD, gestion de projet, rétrospective) est dans
 
 ## Prérequis
 
-- Docker Desktop (Docker Compose v2)
+- Docker avec une version récente de Docker Compose ; le mode images publiées
+  nécessite la prise en charge du tag YAML `!reset`.
 
 Aucun PHP, Node.js ni Python n'est nécessaire sur la machine : tout tourne dans les conteneurs.
 
@@ -68,7 +69,8 @@ docker compose exec account-service php bin/console lexik:jwt:check-config
 ## Démarrage avec les images publiées
 
 Pour télécharger les images GHCR au lieu de les construire, ajouter le petit
-fichier de surcharge `compose.prod.yaml` :
+fichier de surcharge `compose.prod.yaml` au fichier principal (il ne se lance
+pas seul) :
 
 ```bash
 docker compose -f compose.yaml -f compose.prod.yaml up -d --wait

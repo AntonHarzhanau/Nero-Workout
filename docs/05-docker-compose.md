@@ -2,7 +2,10 @@
 
 [← Dockerfiles](04-dockerfiles.md) · [Sommaire](README.md) · [Suivant : CI/CD →](06-ci-cd.md)
 
-L'application complète démarre en une commande :
+## Démarrage local et images publiées
+
+Après copie de `.env.example`, le fichier principal construit les images depuis
+les sources et démarre l'application :
 
 ```bash
 cp .env.example .env
@@ -18,30 +21,48 @@ Pour utiliser les images publiées sans construire les sources :
 docker compose -f compose.yaml -f compose.prod.yaml up -d --wait
 ```
 
-La surcharge `compose.prod.yaml` supprime les sections `build` avec `!reset`,
-définit les images GHCR et force leur téléchargement (`pull_policy: always`).
-`NERO_TAG` vaut `latest` par défaut ; un tag de release ou `sha-<SHA complet>`
-permet de choisir une version déjà publiée. Les migrations utilisent les mêmes
-images que leurs services. Les ports, réseaux, volumes et dépendances restent
-ceux du fichier principal ; cette surcharge ne configure pas Traefik.
+`compose.prod.yaml` est une surcharge : il s'utilise avec `compose.yaml`, dans
+cet ordre, et ne constitue pas un stack autonome. Il supprime les sections
+`build` avec `!reset`, définit les images GHCR et force leur téléchargement
+(`pull_policy: always`). Une version récente de Docker Compose prenant en charge
+`!reset` est nécessaire.
 
-- `--build` reconstruit les images à partir des sources : chaque service
-  déclare `build.context` et `build.target: runtime`.
-- `--wait` ne rend la main que lorsque tous les services sont *healthy*.
+`NERO_TAG` vaut `latest` par défaut ; un tag de release ou `sha-<SHA complet>`
+sélectionne une version déjà publiée pour les six images. Les migrations
+réutilisent les images Account et Workout. Les sources et Dockerfiles ne sont
+pas nécessaires dans ce mode : les deux fichiers Compose et le `.env` suffisent.
+Si les images sont privées, se connecter au registre avec `docker login ghcr.io`.
+
+Les ports, réseaux, volumes et dépendances restent ceux du fichier principal.
+L'application écoute sur `FRONT_PORT` (3000 par défaut) ; cette surcharge ne
+configure ni Traefik ni HTTPS.
+
+- `--build`, utilisé en local, construit les images à partir des contextes
+  déclarés dans `compose.yaml`. Les quatre images applicatives ciblent l'étape
+  `runtime` ; les deux images d'infrastructure utilisent l'étape finale.
+- `--wait` attend que les services permanents soient démarrés ou *healthy*,
+  selon leur healthcheck. Les tâches ponctuelles doivent terminer avec succès
+  avant leurs services dépendants.
 
 ## Conteneurs
 
-| Service | Type | Image / build | Rôle |
+Les images GHCR ci-dessous ont pour préfixe
+`ghcr.io/antonharzhanau/nero-workout-` et pour tag `${NERO_TAG:-latest}`.
+
+| Service | Type | Contexte local | Suffixe GHCR / image externe |
 |---|---|---|---|
-| `postgres` | permanent | `infra/postgres` | Base de données |
-| `redis` | permanent | `redis:8-alpine` | Cache des statistiques |
-| `init-secrets` | ponctuel | `infra/secrets` | Génère les clés JWT et le jeton interne |
-| `account-migration` | ponctuel | image account-service | Migrations Doctrine |
-| `workout-migration` | ponctuel | image workout-service | Migrations TypeORM |
-| `account-service` | permanent | `services/account-service` | API comptes |
-| `workout-service` | permanent | `services/workout-service` | API entraînements |
-| `statistics-service` | permanent | `services/statistics-service` | API statistiques |
-| `front` | permanent | `front` | Interface web |
+| `postgres` | permanent | `infra/postgres` | `postgres` |
+| `redis` | permanent | — | `redis:8.10.3-alpine3.23` (digest épinglé) |
+| `init-secrets` | ponctuel | `infra/secrets` | `init-secrets` |
+| `account-migration` | ponctuel | `services/account-service` | `account` |
+| `workout-migration` | ponctuel | `services/workout-service` | `workout` |
+| `account-service` | permanent | `services/account-service` | `account` |
+| `workout-service` | permanent | `services/workout-service` | `workout` |
+| `statistics-service` | permanent | `services/statistics-service` | `statistics` |
+| `front` | permanent | `front` | `front` |
+
+Redis utilise une image externe dans les deux modes ; il n'est pas construit
+localement ni publié par la CI du projet.
 
 Les conteneurs ponctuels (`restart: "no"`) s'arrêtent une fois leur tâche
 terminée. Les autres sont en `restart: unless-stopped`.
@@ -136,7 +157,10 @@ flowchart TB
 
 ## Secrets
 
-Aucun secret n'est commité ni intégré dans une image.
+Les secrets de déploiement ne sont pas intégrés aux images. `.env.example`
+contient des valeurs publiques de développement pour permettre un démarrage
+local immédiat ; elles doivent être remplacées sur le serveur. Les clés JWT et
+le jeton interne sont générés dans des volumes au premier lancement.
 
 ```mermaid
 flowchart LR
@@ -167,7 +191,8 @@ flowchart LR
 - **Variables obligatoires** : les mots de passe sont déclarés en
   `${VAR:?VAR is required}`. `docker compose` refuse de démarrer si l'une
   d'elles manque, plutôt que de lancer une base sans mot de passe.
-- Le fichier `.env` est ignoré par Git ; `.env.example` sert de modèle.
+- Le fichier `.env` est ignoré par Git ; `.env.example` sert de modèle et fournit
+  les mots de passe locaux ainsi que `ACCOUNT_APP_SECRET` et `REDIS_PASSWORD`.
 
 ## Factorisation
 
@@ -186,14 +211,36 @@ services:
       <<: *account-db
 ```
 
+Dans `compose.prod.yaml`, l'ancre `x-published` évite de répéter les deux
+réglages communs aux images du projet :
+
+```yaml
+x-published: &published
+  build: !reset null
+  pull_policy: always
+
+services:
+  front:
+    <<: *published
+    image: ghcr.io/antonharzhanau/nero-workout-front:${NERO_TAG:-latest}
+```
+
+`x-published` est un bloc d'extension, pas un conteneur. `&published` nomme
+l'ancre et `<<: *published` insère son contenu dans chaque service. `!reset null`
+retire le `build` hérité ; `always` impose le téléchargement de l'image.
+
 ## Environnements (TEST / UAT / PROD)
 
-La configuration dépend uniquement du fichier `.env` : le même `compose.yaml`
-sert à tous les environnements.
+Le fichier `.env` définit les paramètres de chaque environnement. Le mode de
+lancement dépend des fichiers Compose sélectionnés : `compose.yaml` pour le
+build local ; `compose.yaml` avec `compose.prod.yaml` pour les images publiées.
+Le nom `prod` indique ce second mode, qui peut aussi servir à un environnement
+de test ou de recette.
 
 | Variable | Rôle | Exemple TEST / UAT / PROD |
 |---|---|---|
 | `COMPOSE_PROJECT_NAME` | Isole conteneurs, réseaux et volumes sur un même hôte | `nero-test` / `nero-uat` / `nero-prod` |
+| `NERO_TAG` | Version des images avec `compose.prod.yaml` ; sans effet sur le build local | `latest` / `sha-<SHA complet>` / `vX.Y.Z` |
 | `FRONT_PORT` | Évite les conflits de port | `3000` / `3100` / `80` |
 | `AUTH_COOKIE_PREFIX` | Cookies distincts par environnement | `test` / `uat` / `nero` |
 | `AUTH_COOKIE_SECURE` | `Secure` obligatoire derrière HTTPS | `false` / `true` / `true` |
@@ -201,21 +248,26 @@ sert à tous les environnements.
 
 ```mermaid
 flowchart LR
-    compose[compose.yaml] --> T[nero-test]
-    compose --> U[nero-uat]
-    compose --> P[nero-prod]
-    et[.env.test] -.-> T
+    compose[compose.yaml] --> local[Build local]
+    compose --> published[Images GHCR]
+    override[compose.prod.yaml] --> published
+    published --> U[nero-uat]
+    published --> P[nero-prod]
+    env[.env] -.-> local
     eu[.env.uat] -.-> U
     ep[.env.prod] -.-> P
 ```
 
+Après préparation d'un fichier `.env.uat` avec ses secrets et `NERO_TAG`, par
+exemple :
+
 ```bash
-docker compose --env-file .env.uat up -d --wait
+docker compose --env-file .env.uat -f compose.yaml -f compose.prod.yaml up -d --wait
 ```
 
-> TODO : ajouter les fichiers d'exemple par environnement et les limites CPU /
-> mémoire (`deploy.resources.limits`) si elles sont ajoutées au compose avant le
-> rendu.
+Les fichiers `.env.uat` et `.env.prod` sont à préparer à partir de `.env.example`.
+Les deux fichiers Compose ne définissent actuellement pas de limites CPU ou
+mémoire ; la surcharge de production ne change que la provenance des images.
 
 ## Données de démonstration
 

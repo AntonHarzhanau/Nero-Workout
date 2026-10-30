@@ -12,7 +12,7 @@
 | **Cache Symfony au build** : `cache:warmup` exige des variables de connexion à la base qui n'existent pas au moment du build. | Valeurs factices passées uniquement à la commande de warmup ; les vraies valeurs sont injectées à l'exécution. |
 | **FrankenPHP en non root** : le binaire porte une capability réseau qui pose problème sous un utilisateur sans privilège. | `setcap -r` sur le binaire et écoute sur le port 8080. |
 | **Partage de données entre services** sans base commune (suppression de compte, statistiques). | Routes `/internal` authentifiées par un jeton partagé ; snapshots des exercices dans les séances ([voir Données](03-donnees.md)). |
-| **Variables partagées du compose** modifiées en parallèle dans deux branches, d'où des conflits de fusion. | Ancres YAML et variables obligatoires centralisées dans `.env.example`. |
+| **Configuration Compose partagée** : variables modifiées en parallèle dans plusieurs branches et besoin de distinguer le build local des images publiées. | Ancres YAML, valeurs locales prêtes à l'emploi dans `.env.example` et surcharge `compose.prod.yaml` qui remplace les builds par les images GHCR, sans recopier les réseaux, volumes ni dépendances ([voir Compose](05-docker-compose.md#démarrage-local-et-images-publiées)). |
 | **Images de release** reconstruites à partir du tag, donc potentiellement différentes de celles testées. | Re-étiquetage de l'image `sha-<commit>` existante au lieu d'un nouveau build ([voir CI/CD](06-ci-cd.md#une-release-ne-reconstruit-pas-limage)). |
 
 Toutes ces difficultés vont dans le même sens : chaque étape manuelle a fini
@@ -37,5 +37,7 @@ flowchart LR
   d'allers-retours.
 - **Enrichir la pipeline** : analyse de vulnérabilités des images (Trivy,
   Docker Scout), lint systématique, test de démarrage du compose complet.
-- **Définir dès le départ les fichiers d'environnement et les limites de
-  ressources** dans le compose.
+- **Prévoir dès le départ les deux modes de lancement** : build local avec
+  des valeurs de développement, images publiées avec des secrets propres au
+  serveur. Les limites CPU et mémoire restent à définir dans les fichiers
+  Compose partagés.
