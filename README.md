@@ -122,3 +122,4 @@ sont conservés. Les noms du catalogue sont mis à jour, les groupes manquants a
 
 Dashboard et Progression utilisent les API authentifiées réelles. Le choix de
 l'exercice est conservé sur l'appareil, séparément pour chaque utilisateur.
+test

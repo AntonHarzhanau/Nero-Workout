@@ -1,5 +1,3 @@
-# Use with: docker compose -f compose.yaml -f compose.prod.yaml up -d --wait
-# Remove build contexts so this mode also works without application sources.
 x-published: &published
   build: !reset null
   pull_policy: always
