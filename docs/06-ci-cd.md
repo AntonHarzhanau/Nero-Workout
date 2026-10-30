@@ -18,13 +18,15 @@ Un **monorepo** GitHub, avec un dossier par composant :
 │   └── secrets/
 ├── scripts/demo/
 ├── compose.yaml
+├── compose.prod.yaml
 ├── compose.demo.yaml
 └── .github/workflows/
 ```
 
 **Pourquoi un monorepo ?**
 
-- un seul `git clone` suffit pour lancer `docker compose up` ;
+- un seul `git clone`, la copie de `.env.example` en `.env` et
+  `docker compose up -d --build --wait` suffisent pour le démarrage local ;
 - quand un contrat d'API change, ses deux côtés évoluent dans la même pull
   request ;
 - la CI est factorisée par langage (workflows réutilisables) ;
@@ -121,6 +123,18 @@ Les images sont publiées sur **GitHub Container Registry** :
 | Push d'un tag `vX.Y.Z` | `vX.Y.Z` |
 
 Les étiquettes sont calculées par `docker/metadata-action`.
+
+Le fichier `compose.prod.yaml` utilise ces six images (`front`, `account`,
+`workout`, `statistics`, `postgres`, `init-secrets`) avec un même `NERO_TAG`.
+Les services de migration réutilisent les images Account et Workout ; Redis
+provient directement de son image externe épinglée.
+
+Après configuration du `.env`, les images publiées se lancent avec
+`docker compose -f compose.yaml -f compose.prod.yaml up -d --wait`. La surcharge
+supprime les builds et impose le téléchargement des images. `latest` suit les
+publications sur `main` ; un tag de release ou `sha-<SHA complet>` sélectionne
+une version précise déjà présente dans GHCR. Le workflow publie les images,
+mais ne déclenche pas lui-même leur déploiement sur le serveur.
 
 ### Une release ne reconstruit pas l'image
 

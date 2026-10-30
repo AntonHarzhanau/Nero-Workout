@@ -14,7 +14,6 @@ x-workout-db: &workout-db
 
 services:
   postgres:
-    image: nero-postgres-v1
     build: ./infra/postgres
 
     restart: "unless-stopped"

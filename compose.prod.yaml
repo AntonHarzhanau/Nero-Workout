@@ -1,0 +1,41 @@
+# Use with: docker compose -f compose.yaml -f compose.prod.yaml up -d --wait
+# Remove build contexts so this mode also works without application sources.
+x-published: &published
+  build: !reset null
+  pull_policy: always
+
+services:
+  postgres:
+    <<: *published
+    image: ghcr.io/antonharzhanau/nero-workout-postgres:${NERO_TAG:-latest}
+
+  init-secrets:
+    <<: *published
+    image: ghcr.io/antonharzhanau/nero-workout-init-secrets:${NERO_TAG:-latest}
+
+  account-migration:
+    <<: *published
+    image: ghcr.io/antonharzhanau/nero-workout-account:${NERO_TAG:-latest}
+
+  account-service:
+    <<: *published
+    image: ghcr.io/antonharzhanau/nero-workout-account:${NERO_TAG:-latest}
+
+  workout-migration:
+    <<: *published
+    image: ghcr.io/antonharzhanau/nero-workout-workout:${NERO_TAG:-latest}
+
+  workout-service:
+    <<: *published
+    image: ghcr.io/antonharzhanau/nero-workout-workout:${NERO_TAG:-latest}
+
+  statistics-service:
+    <<: *published
+    image: ghcr.io/antonharzhanau/nero-workout-statistics:${NERO_TAG:-latest}
+
+  front:
+    <<: *published
+    image: ghcr.io/antonharzhanau/nero-workout-front:${NERO_TAG:-latest}
+
+  redis:
+    pull_policy: always

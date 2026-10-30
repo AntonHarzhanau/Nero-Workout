@@ -28,7 +28,7 @@ flowchart LR
 | 2 | [Authentification et sessions](02-authentification.md) | JWT RS256, refresh tokens, front sans état, contrôle d'accès, rôles |
 | 3 | [Données](03-donnees.md) | PostgreSQL, schémas et rôles par service, modèle de données, cache Redis |
 | 4 | [Dockerfiles](04-dockerfiles.md) | Builds multi-étapes, images, bonnes pratiques |
-| 5 | [docker-compose](05-docker-compose.md) | Orchestration, réseaux, secrets, environnements, limites |
+| 5 | [docker-compose](05-docker-compose.md) | Build local, images GHCR, orchestration, réseaux, secrets, environnements |
 | 6 | [Dépôt Git et CI/CD](06-ci-cd.md) | Organisation du dépôt, pipeline GitHub Actions, registre d'images |
 | 7 | [Gestion de projet](07-gestion-projet.md) | Organisation, répartition, chronologie |
 | 8 | [Rétrospective](08-retrospective.md) | Difficultés, solutions, ce qu'on referait autrement |
@@ -40,8 +40,18 @@ cp .env.example .env
 docker compose up -d --build --wait
 ```
 
-Application disponible sur <http://localhost:3000>. Les détails (compte admin,
-données de démonstration) sont dans le [README principal](../README.md).
+Les valeurs de `.env.example` permettent ce démarrage local sans modification.
+Pour télécharger les images GHCR au lieu de construire les sources :
+
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml up -d --wait
+```
+
+`NERO_TAG=latest` est la valeur par défaut ; un tag publié ou `sha-<SHA complet>`
+sélectionne une version précise. Remplacer les secrets locaux avant un déploiement
+serveur. Les deux modes exposent l'application sur <http://localhost:3000> par
+défaut. Les détails (compte admin, données de démonstration) sont dans le
+[README principal](../README.md).
 
 ## Respect des contraintes du sujet
 
