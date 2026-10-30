@@ -99,6 +99,8 @@ flowchart LR
     end
 
     m --> res[CI Result]
+    m -- "tag prod et images publiées" --> deploy[API Dockhand]
+    deploy --> res
     skip --> res
 ```
 
@@ -109,7 +111,8 @@ flowchart LR
   toute publication**.
 - La matrice d'images est en `fail-fast` : si une image ne se construit pas, les
   autres sont annulées.
-- Le job final `CI Result` échoue si l'un des jobs n'a pas réussi. Il sert de
+- Le job final `CI Result` attend aussi le job de déploiement, lorsqu'il est
+  exécuté, et échoue si un job échoue. Il sert de
   **statut unique** pour la protection de la branche `main`.
 
 ## Images et identifiants uniques
@@ -133,8 +136,20 @@ Après configuration du `.env`, les images publiées se lancent avec
 `docker compose -f compose.yaml -f compose.prod.yaml up -d --wait`. La surcharge
 supprime les builds et impose le téléchargement des images. `latest` suit les
 publications sur `main` ; un tag de release ou `sha-<SHA complet>` sélectionne
-une version précise déjà présente dans GHCR. Le workflow publie les images,
-mais ne déclenche pas lui-même leur déploiement sur le serveur.
+une version précise déjà présente dans GHCR.
+
+Le push du tag Git `prod` déclenche aussi le job `Deploy production`, uniquement
+après le succès de toute la matrice d'images. Il appelle l'API de Dockhand pour
+redéployer le stack existant avec téléchargement des images, sans build et avec
+recréation des conteneurs. Le Compose utilisé reste celui enregistré dans
+Dockhand ; ses images doivent utiliser `NERO_TAG=prod` ou le tag `:prod`.
+
+Deux secrets GitHub Actions sont nécessaires : `DOCKHAND_API_TOKEN` (jeton API
+Dockhand) et `DOCKHAND_DEPLOY_URL` (URL complète
+`https://<dockhand>/api/stacks/<nom>/deploy?env=<id>`). L'URL doit être accessible
+depuis le runner GitHub. Une variable manquante ou une erreur HTTP fait échouer
+le job ; la santé de l'application reste à vérifier dans Dockhand. Les autres
+branches et tags ne déclenchent pas de déploiement.
 
 ### Une release ne reconstruit pas l'image
 
