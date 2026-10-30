@@ -60,10 +60,35 @@ jobs:
             format('services/{0}-service', matrix.service) }}
       target: ${{ matrix.service != 'init-secrets' && matrix.service != 'postgres' && 'runtime' || '' }}
 
+  deploy:
+    name: Deploy production
+    needs: images
+    if: github.event_name == 'push' && github.ref == 'refs/tags/prod'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Redeploy Dockhand stack
+        env:
+          DEPLOY_URL: ${{ secrets.DOCKHAND_DEPLOY_URL }}
+          API_TOKEN: ${{ secrets.DOCKHAND_API_TOKEN }}
+        run: |
+          : "${DEPLOY_URL:?Set the DOCKHAND_DEPLOY_URL repository secret}"
+          : "${API_TOKEN:?Set the DOCKHAND_API_TOKEN repository secret}"
+
+          curl --fail --silent --show-error \
+            --connect-timeout 15 \
+            --max-time 540 \
+            --request POST "$DEPLOY_URL" \
+            --header "Authorization: Bearer $API_TOKEN" \
+            --header "Accept: application/json" \
+            --header "Content-Type: application/json" \
+            --data '{"pull":true,"build":false,"forceRecreate":true}'
+
   result:
     name: CI Result
     if: ${{ !cancelled() }}
-    needs: [front, workout, account, statistics, images]
+    needs: [front, workout, account, statistics, images, deploy]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
 
