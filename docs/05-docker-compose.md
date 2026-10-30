@@ -9,6 +9,22 @@ cp .env.example .env
 docker compose up -d --build --wait
 ```
 
+Les valeurs de `.env.example` suffisent pour le démarrage local. Remplacer les
+secrets de développement avant un déploiement serveur.
+
+Pour utiliser les images publiées sans construire les sources :
+
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml up -d --wait
+```
+
+La surcharge `compose.prod.yaml` supprime les sections `build` avec `!reset`,
+définit les images GHCR et force leur téléchargement (`pull_policy: always`).
+`NERO_TAG` vaut `latest` par défaut ; un tag de release ou `sha-<SHA complet>`
+permet de choisir une version déjà publiée. Les migrations utilisent les mêmes
+images que leurs services. Les ports, réseaux, volumes et dépendances restent
+ceux du fichier principal ; cette surcharge ne configure pas Traefik.
+
 - `--build` reconstruit les images à partir des sources : chaque service
   déclare `build.context` et `build.target: runtime`.
 - `--wait` ne rend la main que lorsque tous les services sont *healthy*.

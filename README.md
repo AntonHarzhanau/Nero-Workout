@@ -23,9 +23,9 @@ Toutes les commandes se lancent depuis la racine du projet.
 cp .env.example .env
 ```
 
-Renseigner au minimum `ACCOUNT_APP_SECRET` et `REDIS_PASSWORD` (par exemple avec
-`openssl rand -hex 32`). Le compose refuse de démarrer si une variable
-obligatoire manque.
+Les valeurs du fichier permettent un démarrage local immédiat, sans modification.
+Pour un déploiement serveur, remplacer les mots de passe et `ACCOUNT_APP_SECRET`
+par des secrets propres à l'environnement (par exemple avec `openssl rand -hex 32`).
 
 ### 2. Démarrage
 
@@ -64,6 +64,26 @@ Configuration JWT (attendu : `The configuration seems correct.`) :
 ```bash
 docker compose exec account-service php bin/console lexik:jwt:check-config
 ```
+
+## Démarrage avec les images publiées
+
+Pour télécharger les images GHCR au lieu de les construire, ajouter le petit
+fichier de surcharge `compose.prod.yaml` :
+
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml up -d --wait
+```
+
+`NERO_TAG` sélectionne la version commune des six images (`latest` par défaut,
+ou un tag de release / `sha-<SHA complet>` déjà publié). Les migrations réutilisent
+les images Account et Workout. À chaque lancement, les images sont téléchargées ;
+les sections `build` sont supprimées de la configuration fusionnée. Les sources
+ne sont donc pas nécessaires : les deux fichiers Compose et un `.env` suffisent.
+Si les images sont privées, s'authentifier d'abord avec `docker login ghcr.io`.
+Utiliser une version récente de Docker Compose prenant en charge `!reset`.
+
+Cette surcharge change uniquement l'origine des images : l'application reste
+accessible sur le port `FRONT_PORT`. Elle ne configure pas Traefik ni HTTPS.
 
 ## Compte et données de démonstration
 
