@@ -11,7 +11,7 @@ class SessionRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, Session::class);
+        parent::__construct($registry, Session::class); 
     }
 
     public function findOneByRefreshTokenHash(string $hash): ?Session
